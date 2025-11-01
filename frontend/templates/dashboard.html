@@ -65,10 +65,10 @@
         </span>
       </a>
       
-      <a href="/biometrics" class="action-button">
+      <a href="/profile" class="action-button">
         <span class="action-icon">⚖️</span>
         <span class="action-text">
-          <strong>Update Weight</strong>
+          <strong>Update Profile</strong>
           <small>Track your progress</small>
         </span>
       </a>
@@ -101,6 +101,32 @@
     {% else %}
     <p>Maintaining a balanced diet with adequate protein, healthy fats, and complex carbohydrates supports overall health and energy levels.</p>
     {% endif %}
+  </div>
+
+  <!-- Understanding BMI -->
+  <div class="card bmi-info-card">
+    <h3>📚 Understanding BMI</h3>
+    <div class="bmi-ranges">
+      <div class="bmi-range underweight">
+        <span class="range-label">Underweight</span>
+        <span class="range-value">&lt; 18.5</span>
+      </div>
+      <div class="bmi-range normal">
+        <span class="range-label">Normal</span>
+        <span class="range-value">18.5 - 24.9</span>
+      </div>
+      <div class="bmi-range overweight">
+        <span class="range-label">Overweight</span>
+        <span class="range-value">25.0 - 29.9</span>
+      </div>
+      <div class="bmi-range obese">
+        <span class="range-label">Obese</span>
+        <span class="range-value">≥ 30.0</span>
+      </div>
+    </div>
+    <p class="info-note">
+      <strong>Note:</strong> BMI is a screening tool. It doesn't directly measure body fat and may not be accurate for athletes, elderly, or pregnant individuals. Consult healthcare professionals for personalized advice.
+    </p>
   </div>
 </div>
 
@@ -236,6 +262,72 @@
   border-left: 4px solid var(--accent);
 }
 
+.bmi-info-card {
+  background: linear-gradient(135deg, rgba(79,157,246,0.08), rgba(255,255,255,0.95));
+  border-left: 4px solid var(--primary);
+}
+
+.bmi-ranges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 16px 0 20px;
+}
+
+.bmi-range {
+  padding: 14px;
+  border-radius: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bmi-range.underweight {
+  background: #fef3c7;
+  border: 2px solid #fbbf24;
+}
+
+.bmi-range.normal {
+  background: #d1fae5;
+  border: 2px solid #22c55e;
+}
+
+.bmi-range.overweight {
+  background: #fed7aa;
+  border: 2px solid #f97316;
+}
+
+.bmi-range.obese {
+  background: #fecaca;
+  border: 2px solid #ef4444;
+}
+
+.range-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.range-value {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.info-note {
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.info-note strong {
+  color: var(--text);
+}
+
 @media (max-width: 768px) {
   .stats-grid {
     grid-template-columns: 1fr;
@@ -243,6 +335,10 @@
   
   .action-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .bmi-ranges {
+    grid-template-columns: 1fr 1fr;
   }
 }
 </style>

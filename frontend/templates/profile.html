@@ -4,7 +4,7 @@
 <div class="profile-container">
   <div class="page-header">
     <h2>👤 My Profile</h2>
-    <p class="page-subtitle">Manage your personal information and account settings</p>
+    <p class="page-subtitle">Manage your personal information and health metrics</p>
   </div>
 
   <!-- Profile Overview Card -->
@@ -36,11 +36,77 @@
     </div>
   </div>
 
-  <!-- Edit Profile Form -->
+  <!-- Current Health Metrics Summary -->
+  {% if bio %}
+  <div class="card metrics-summary">
+    <div class="card-header">
+      <h3>📊 Current Health Metrics</h3>
+      <p class="muted">Your latest biometric measurements</p>
+    </div>
+    
+    <div class="metrics-grid">
+      <div class="metric-item">
+        <div class="metric-icon">⚖️</div>
+        <div class="metric-content">
+          <span class="metric-label">Weight</span>
+          <span class="metric-value">{{ bio.weight_kg }} kg</span>
+        </div>
+      </div>
+
+      <div class="metric-item">
+        <div class="metric-icon">📏</div>
+        <div class="metric-content">
+          <span class="metric-label">Height</span>
+          <span class="metric-value">{{ bio.height_cm }} cm</span>
+        </div>
+      </div>
+
+      <div class="metric-item">
+        <div class="metric-icon">📈</div>
+        <div class="metric-content">
+          <span class="metric-label">BMI</span>
+          <span class="metric-value bmi">{{ bio.bmi }}</span>
+        </div>
+      </div>
+
+      <div class="metric-item">
+        <div class="metric-icon">🎯</div>
+        <div class="metric-content">
+          <span class="metric-label">Goal</span>
+          <span class="metric-value">{{ bio.goal|capitalize }}</span>
+        </div>
+      </div>
+
+      {% if bio.target_weight_kg %}
+      <div class="metric-item">
+        <div class="metric-icon">🏁</div>
+        <div class="metric-content">
+          <span class="metric-label">Target Weight</span>
+          <span class="metric-value">{{ bio.target_weight_kg }} kg</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="metric-item">
+        <div class="metric-icon">🏃</div>
+        <div class="metric-content">
+          <span class="metric-label">Activity</span>
+          <span class="metric-value">{{ bio.activity_level|replace('_', ' ')|title }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics-footer">
+      <p class="muted">Last updated: {{ bio.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Edit Personal Information -->
   <div class="card form-card">
     <div class="card-header">
-      <h3>✏️ Edit Profile Information</h3>
-      <p class="muted">Update your personal details</p>
+      <h3>✏️ Personal Information</h3>
+      <p class="muted">Update your account details</p>
     </div>
     
     <form method="post" action="/profile/update" class="profile-form">
@@ -83,67 +149,114 @@
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn-primary">💾 Save Changes</button>
-        <a href="/dashboard" class="btn-outline">Cancel</a>
+        <button type="submit" class="btn-primary">💾 Save Personal Info</button>
       </div>
     </form>
   </div>
 
-  <!-- Current Biometrics Summary -->
-  {% if bio %}
-  <div class="card bio-summary">
+  <!-- Edit Biometrics -->
+  <div class="card form-card biometrics-card">
     <div class="card-header">
-      <h3>📊 Current Health Metrics</h3>
-      <p class="muted">Your latest biometric measurements</p>
+      <h3>⚖️ Update Biometrics</h3>
+      <p class="muted">Track your physical measurements and health goals</p>
     </div>
     
-    <div class="metrics-grid">
-      <div class="metric-item">
-        <div class="metric-icon">⚖️</div>
-        <div class="metric-content">
-          <span class="metric-label">Weight</span>
-          <span class="metric-value">{{ bio.weight_kg }} kg</span>
+    <form method="post" action="/biometrics" class="biometrics-form">
+      <div class="form-section">
+        <h4>📏 Physical Measurements</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="height_cm">Height (cm) *</label>
+            <input type="number" 
+                   id="height_cm"
+                   name="height_cm" 
+                   step="0.1" 
+                   min="50" 
+                   max="250"
+                   value="{{ bio.height_cm if bio else '' }}"
+                   placeholder="e.g., 170.5" 
+                   required>
+            <small class="help-text">Enter your height in centimeters</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="weight_kg">Weight (kg) *</label>
+            <input type="number" 
+                   id="weight_kg"
+                   name="weight_kg" 
+                   step="0.1" 
+                   min="20" 
+                   max="300"
+                   value="{{ bio.weight_kg if bio else '' }}"
+                   placeholder="e.g., 70.5" 
+                   required>
+            <small class="help-text">Enter your current weight</small>
+          </div>
         </div>
       </div>
 
-      <div class="metric-item">
-        <div class="metric-icon">📏</div>
-        <div class="metric-content">
-          <span class="metric-label">Height</span>
-          <span class="metric-value">{{ bio.height_cm }} cm</span>
+      <div class="form-section">
+        <h4>🎯 Health Goals</h4>
+        <div class="form-group">
+          <label for="goal">Primary Goal *</label>
+          <select id="goal" name="goal" required>
+            <option value="maintain" {% if bio and bio.goal == 'maintain' %}selected{% endif %}>
+              Maintain Current Weight
+            </option>
+            <option value="loss" {% if bio and bio.goal == 'loss' %}selected{% endif %}>
+              Lose Weight
+            </option>
+            <option value="gain" {% if bio and bio.goal == 'gain' %}selected{% endif %}>
+              Gain Weight
+            </option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="target_weight_kg">Target Weight (kg)</label>
+          <input type="number" 
+                 id="target_weight_kg"
+                 name="target_weight_kg" 
+                 step="0.1"
+                 min="20"
+                 max="300"
+                 value="{{ bio.target_weight_kg if bio else '' }}"
+                 placeholder="e.g., 65.0">
+          <small class="help-text">Optional: Set a target weight for your goal</small>
         </div>
       </div>
 
-      <div class="metric-item">
-        <div class="metric-icon">📈</div>
-        <div class="metric-content">
-          <span class="metric-label">BMI</span>
-          <span class="metric-value bmi">{{ bio.bmi }}</span>
+      <div class="form-section">
+        <h4>🏃 Activity Level</h4>
+        <div class="form-group">
+          <label for="activity_level">Current Activity Level</label>
+          <select id="activity_level" name="activity_level">
+            <option value="sedentary" {% if bio and bio.activity_level == 'sedentary' %}selected{% endif %}>
+              Sedentary (Little or no exercise)
+            </option>
+            <option value="light" {% if bio and bio.activity_level == 'light' %}selected{% endif %}>
+              Light (Exercise 1-3 days/week)
+            </option>
+            <option value="moderate" {% if bio and bio.activity_level == 'moderate' %}selected{% elif not bio %}selected{% endif %}>
+              Moderate (Exercise 3-5 days/week)
+            </option>
+            <option value="active" {% if bio and bio.activity_level == 'active' %}selected{% endif %}>
+              Active (Exercise 6-7 days/week)
+            </option>
+            <option value="very_active" {% if bio and bio.activity_level == 'very_active' %}selected{% endif %}>
+              Very Active (Physical job + exercise)
+            </option>
+          </select>
+          <small class="help-text">This helps estimate your daily calorie needs</small>
         </div>
       </div>
 
-      <div class="metric-item">
-        <div class="metric-icon">🎯</div>
-        <div class="metric-content">
-          <span class="metric-label">Goal</span>
-          <span class="metric-value">{{ bio.goal|capitalize }}</span>
-        </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">💾 Save Biometrics</button>
+        <a href="/dashboard" class="btn-outline">Cancel</a>
       </div>
-    </div>
-
-    <div class="bio-footer">
-      <p class="muted">Last updated: {{ bio.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
-      <a href="/biometrics" class="btn-secondary">Update Biometrics →</a>
-    </div>
+    </form>
   </div>
-  {% else %}
-  <div class="card empty-state">
-    <div class="empty-icon">📊</div>
-    <h3>No Biometrics Data</h3>
-    <p>You haven't added any biometric measurements yet. Start tracking your health metrics now!</p>
-    <a href="/biometrics" class="btn-primary">Add Biometrics</a>
-  </div>
-  {% endif %}
 
   <!-- Account Security -->
   <div class="card security-card">
@@ -307,15 +420,97 @@
   font-size: 16px;
 }
 
+.metrics-summary {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(255, 255, 255, 0.95));
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.metric-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.metric-icon {
+  font-size: 32px;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(79, 157, 246, 0.1), rgba(34, 197, 94, 0.1));
+  flex-shrink: 0;
+}
+
+.metric-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  word-wrap: break-word;
+}
+
+.metric-value.bmi {
+  color: var(--primary);
+}
+
+.metrics-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.metrics-footer .muted {
+  font-size: 13px;
+  margin: 0;
+}
+
 .form-card {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(247, 250, 252, 0.95));
 }
 
-.profile-form .form-group {
-  margin-bottom: 24px;
+.biometrics-card {
+  background: linear-gradient(135deg, rgba(79, 157, 246, 0.05), rgba(255, 255, 255, 0.95));
+  border-left: 4px solid var(--primary);
 }
 
-.profile-form label {
+.profile-form .form-group,
+.biometrics-form .form-group {
+  margin-bottom: 20px;
+}
+
+.profile-form label,
+.biometrics-form label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
@@ -324,7 +519,9 @@
 }
 
 .profile-form input,
-.profile-form select {
+.profile-form select,
+.biometrics-form input,
+.biometrics-form select {
   width: 100%;
   padding: 12px 14px;
   border: 1px solid var(--border);
@@ -335,7 +532,9 @@
 }
 
 .profile-form input:focus,
-.profile-form select:focus {
+.profile-form select:focus,
+.biometrics-form input:focus,
+.biometrics-form select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(79, 157, 246, 0.1);
@@ -355,10 +554,27 @@
   gap: 16px;
 }
 
+.form-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(247, 250, 252, 0.5);
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+}
+
+.form-section h4 {
+  margin: 0 0 16px;
+  color: var(--text);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .form-actions {
   display: flex;
   gap: 12px;
-  margin-top: 28px;
+  margin-top: 24px;
   padding-top: 20px;
   border-top: 1px solid var(--border);
 }
@@ -397,106 +613,6 @@
   color: var(--primary);
 }
 
-.bio-summary {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(255, 255, 255, 0.95));
-}
-
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.metric-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-}
-
-.metric-icon {
-  font-size: 32px;
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(79, 157, 246, 0.1), rgba(34, 197, 94, 0.1));
-}
-
-.metric-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.metric-label {
-  font-size: 12px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.metric-value {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.metric-value.bmi {
-  color: var(--primary);
-}
-
-.bio-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-}
-
-.btn-secondary {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, rgba(79, 157, 246, 0.1), rgba(34, 197, 94, 0.1));
-  color: var(--primary);
-  text-decoration: none;
-  border-radius: 10px;
-  font-weight: 600;
-  border: 1px solid var(--border);
-  transition: all 0.2s ease;
-}
-
-.btn-secondary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 24px;
-}
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-.empty-state h3 {
-  margin: 0 0 12px;
-  font-size: 24px;
-  color: var(--text);
-}
-
-.empty-state p {
-  color: var(--muted);
-  margin-bottom: 24px;
-}
-
 .security-card {
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(255, 255, 255, 0.95));
 }
@@ -527,6 +643,7 @@
   justify-content: center;
   border-radius: 12px;
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(79, 157, 246, 0.1));
+  flex-shrink: 0;
 }
 
 .security-content {
@@ -611,11 +728,6 @@
   
   .metrics-grid {
     grid-template-columns: 1fr;
-  }
-  
-  .bio-footer {
-    flex-direction: column;
-    gap: 16px;
   }
   
   .danger-item {
