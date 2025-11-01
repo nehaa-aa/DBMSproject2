@@ -90,7 +90,8 @@ def signup():
 # ---- Login ----
 @app.get('/login')
 def login_page():
-    return render_template('login.html')
+    signup_success = session.pop('signup_success', False)
+    return render_template('login.html', signup_success=signup_success)
 
 @app.post('/login')
 def login():
@@ -190,21 +191,31 @@ def biometrics_save():
     if not logged_in():
         return redirect(url_for('login_page'))
 
-    h = float(request.form['height_cm'])
-    w = float(request.form['weight_kg'])
-    goal = request.form.get('goal', 'maintain')
-    target_weight = request.form.get('target_weight_kg') or None
-    activity_level = request.form.get('activity_level', 'moderate')
+    try:
+        h = float(request.form['height_cm'])
+        w = float(request.form['weight_kg'])
+        goal = request.form.get('goal', 'maintain')
+        target_weight = request.form.get('target_weight_kg') or None
+        if target_weight:
+            target_weight = float(target_weight)
+        activity_level = request.form.get('activity_level', 'moderate')
 
-    # Always insert new record for history tracking
-    query_db(
-        """INSERT INTO Biometrics (user_id, height_cm, weight_kg, goal, target_weight_kg, activity_level) 
-           VALUES (%s, %s, %s, %s, %s, %s)""",
-        (session['user_id'], h, w, goal, target_weight, activity_level),
-        commit=True
-    )
+        # Always insert new record for history tracking
+        query_db(
+            """INSERT INTO Biometrics (user_id, height_cm, weight_kg, goal, target_weight_kg, activity_level) 
+               VALUES (%s, %s, %s, %s, %s, %s)""",
+            (session['user_id'], h, w, goal, target_weight, activity_level),
+            commit=True
+        )
 
-    return redirect(url_for('reports'))
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        current = query_db(
+            "SELECT * FROM Biometrics WHERE user_id=%s ORDER BY updated_at DESC LIMIT 1",
+            (session['user_id'],),
+            fetchone=True
+        )
+        return render_template('biometrics.html', current=current, error=f"Error saving biometrics: {str(e)}")
 
 # ---- Meal Logging ----
 @app.get('/meal')

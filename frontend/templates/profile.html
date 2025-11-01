@@ -1,0 +1,631 @@
+{% extends "base.html" %}
+{% block title %}My Profile — Smart Nutrition{% endblock %}
+{% block content %}
+<div class="profile-container">
+  <div class="page-header">
+    <h2>👤 My Profile</h2>
+    <p class="page-subtitle">Manage your personal information and account settings</p>
+  </div>
+
+  <!-- Profile Overview Card -->
+  <div class="card profile-overview">
+    <div class="profile-avatar">
+      <div class="avatar-circle">
+        {{ user.name[0].upper() }}
+      </div>
+    </div>
+    <div class="profile-info">
+      <h3>{{ user.name }}</h3>
+      <p class="profile-email">{{ user.email }}</p>
+      <div class="profile-meta">
+        <span class="meta-item">
+          <span class="meta-icon">📅</span>
+          Joined {{ user.created_at.strftime('%B %Y') }}
+        </span>
+        {% if user.age %}
+        <span class="meta-item">
+          <span class="meta-icon">🎂</span>
+          {{ user.age }} years old
+        </span>
+        {% endif %}
+        <span class="meta-item">
+          <span class="meta-icon">⚧</span>
+          {{ user.gender }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profile Form -->
+  <div class="card form-card">
+    <div class="card-header">
+      <h3>✏️ Edit Profile Information</h3>
+      <p class="muted">Update your personal details</p>
+    </div>
+    
+    <form method="post" action="/profile/update" class="profile-form">
+      <div class="form-group">
+        <label for="name">Full Name *</label>
+        <input 
+          type="text" 
+          id="name"
+          name="name" 
+          value="{{ user.name }}"
+          required
+          minlength="2"
+          maxlength="100"
+          placeholder="John Doe">
+        <small class="help-text">Your display name across the platform</small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="age">Age</label>
+          <input 
+            type="number" 
+            id="age"
+            name="age" 
+            value="{{ user.age if user.age else '' }}"
+            min="1"
+            max="120"
+            placeholder="25">
+          <small class="help-text">Optional</small>
+        </div>
+
+        <div class="form-group">
+          <label for="gender">Gender</label>
+          <select id="gender" name="gender">
+            <option value="Male" {% if user.gender == 'Male' %}selected{% endif %}>Male</option>
+            <option value="Female" {% if user.gender == 'Female' %}selected{% endif %}>Female</option>
+            <option value="Other" {% if user.gender == 'Other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">💾 Save Changes</button>
+        <a href="/dashboard" class="btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Current Biometrics Summary -->
+  {% if bio %}
+  <div class="card bio-summary">
+    <div class="card-header">
+      <h3>📊 Current Health Metrics</h3>
+      <p class="muted">Your latest biometric measurements</p>
+    </div>
+    
+    <div class="metrics-grid">
+      <div class="metric-item">
+        <div class="metric-icon">⚖️</div>
+        <div class="metric-content">
+          <span class="metric-label">Weight</span>
+          <span class="metric-value">{{ bio.weight_kg }} kg</span>
+        </div>
+      </div>
+
+      <div class="metric-item">
+        <div class="metric-icon">📏</div>
+        <div class="metric-content">
+          <span class="metric-label">Height</span>
+          <span class="metric-value">{{ bio.height_cm }} cm</span>
+        </div>
+      </div>
+
+      <div class="metric-item">
+        <div class="metric-icon">📈</div>
+        <div class="metric-content">
+          <span class="metric-label">BMI</span>
+          <span class="metric-value bmi">{{ bio.bmi }}</span>
+        </div>
+      </div>
+
+      <div class="metric-item">
+        <div class="metric-icon">🎯</div>
+        <div class="metric-content">
+          <span class="metric-label">Goal</span>
+          <span class="metric-value">{{ bio.goal|capitalize }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bio-footer">
+      <p class="muted">Last updated: {{ bio.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+      <a href="/biometrics" class="btn-secondary">Update Biometrics →</a>
+    </div>
+  </div>
+  {% else %}
+  <div class="card empty-state">
+    <div class="empty-icon">📊</div>
+    <h3>No Biometrics Data</h3>
+    <p>You haven't added any biometric measurements yet. Start tracking your health metrics now!</p>
+    <a href="/biometrics" class="btn-primary">Add Biometrics</a>
+  </div>
+  {% endif %}
+
+  <!-- Account Security -->
+  <div class="card security-card">
+    <div class="card-header">
+      <h3>🔒 Account Security</h3>
+      <p class="muted">Manage your password and security settings</p>
+    </div>
+    
+    <div class="security-info">
+      <div class="security-item">
+        <div class="security-icon">🔑</div>
+        <div class="security-content">
+          <strong>Password</strong>
+          <p class="muted">Last changed: Unknown</p>
+        </div>
+        <button class="btn-outline btn-sm" disabled>Change Password</button>
+      </div>
+      
+      <div class="security-item">
+        <div class="security-icon">📧</div>
+        <div class="security-content">
+          <strong>Email Address</strong>
+          <p class="muted">{{ user.email }}</p>
+        </div>
+        <button class="btn-outline btn-sm" disabled>Update Email</button>
+      </div>
+    </div>
+    
+    <p class="security-note">
+      <strong>Note:</strong> Password and email change features are coming soon. Contact support if you need to update these now.
+    </p>
+  </div>
+
+  <!-- Danger Zone -->
+  <div class="card danger-card">
+    <div class="card-header">
+      <h3>⚠️ Danger Zone</h3>
+      <p class="muted">Irreversible account actions</p>
+    </div>
+    
+    <div class="danger-content">
+      <div class="danger-item">
+        <div>
+          <strong>Delete Account</strong>
+          <p class="muted">Permanently delete your account and all associated data. This action cannot be undone.</p>
+        </div>
+        <button class="btn-danger" disabled>Delete Account</button>
+      </div>
+    </div>
+    
+    <p class="security-note">
+      <strong>Note:</strong> Account deletion is currently disabled. Contact support for account removal requests.
+    </p>
+  </div>
+</div>
+
+<style>
+.profile-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.page-header h2 {
+  font-size: 36px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.card {
+  margin-bottom: 24px;
+}
+
+.card-header {
+  margin-bottom: 24px;
+}
+
+.card-header h3 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  color: var(--text);
+}
+
+.card-header .muted {
+  font-size: 14px;
+  margin: 0;
+}
+
+.profile-overview {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 32px;
+  background: linear-gradient(135deg, rgba(79, 157, 246, 0.08), rgba(34, 197, 94, 0.08));
+}
+
+.profile-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f9df6, #3182ce);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 8px 20px rgba(79, 157, 246, 0.3);
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-info h3 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.profile-email {
+  color: var(--muted);
+  margin: 0 0 16px;
+  font-size: 15px;
+}
+
+.profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+  padding: 6px 12px;
+  background: white;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+.meta-icon {
+  font-size: 16px;
+}
+
+.form-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(247, 250, 252, 0.95));
+}
+
+.profile-form .form-group {
+  margin-bottom: 24px;
+}
+
+.profile-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.profile-form input,
+.profile-form select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.profile-form input:focus,
+.profile-form select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 157, 246, 0.1);
+}
+
+.help-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-primary,
+.btn-outline {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-600));
+  color: white;
+  box-shadow: 0 4px 14px rgba(79, 157, 246, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(79, 157, 246, 0.4);
+}
+
+.btn-outline {
+  background: white;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-outline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.bio-summary {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(255, 255, 255, 0.95));
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.metric-icon {
+  font-size: 32px;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(79, 157, 246, 0.1), rgba(34, 197, 94, 0.1));
+}
+
+.metric-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.metric-value.bmi {
+  color: var(--primary);
+}
+
+.bio-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, rgba(79, 157, 246, 0.1), rgba(34, 197, 94, 0.1));
+  color: var(--primary);
+  text-decoration: none;
+  border-radius: 10px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  margin: 0 0 12px;
+  font-size: 24px;
+  color: var(--text);
+}
+
+.empty-state p {
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+.security-card {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(255, 255, 255, 0.95));
+}
+
+.security-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.security-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.security-icon {
+  font-size: 28px;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(79, 157, 246, 0.1));
+}
+
+.security-content {
+  flex: 1;
+}
+
+.security-content strong {
+  display: block;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.security-content .muted {
+  font-size: 13px;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.security-note {
+  padding: 14px;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+  border-left: 4px solid var(--warn);
+}
+
+.security-note strong {
+  color: var(--text);
+}
+
+.danger-card {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(255, 255, 255, 0.95));
+  border-left: 4px solid #ef4444;
+}
+
+.danger-content {
+  margin-bottom: 20px;
+}
+
+.danger-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.danger-item strong {
+  display: block;
+  color: #991b1b;
+  margin-bottom: 4px;
+}
+
+.btn-danger {
+  padding: 8px 16px;
+  background: white;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  .profile-overview {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .bio-footer {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .danger-item {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+}
+</style>
+{% endblock %}
