@@ -1,0 +1,186 @@
+/* Smart Nutrition — Modern Glass UI */
+
+/* 1) Design tokens */
+:root{
+  --bg:#f7fafc;             /* light neutral */
+  --surface:#ffffff;
+  --text:#1f2937;           /* gray-800 */
+  --muted:#6b7280;          /* gray-500 */
+  --primary:#4f9df6;        /* soft blue */
+  --primary-600:#3182ce;
+  --accent:#22c55e;         /* green accent */
+  --warn:#f59e0b;           /* orange accent */
+  --border:#e5e7eb;
+  --radius:12px;
+  --shadow:0 6px 24px rgba(0,0,0,0.06);
+}
+
+/* 2) Base + animated pastel backdrop */
+*{box-sizing:border-box}
+html,body{
+  margin:0; padding:0; color:var(--text);
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  line-height:1.5;
+}
+@keyframes bgShift {
+  0% { background-position: 0% 50% }
+  50% { background-position: 100% 50% }
+  100% { background-position: 0% 50% }
+}
+body{
+  background-image: linear-gradient(120deg, #f7fafc, #f0fff4, #f0f9ff);
+  background-size: 300% 300%;
+  animation: bgShift 22s ease infinite;
+}
+
+/* 3) Layout container */
+.container{max-width:960px;margin:24px auto;padding:0 16px}
+
+/* 4) Navbar — glassy, elevated */
+.nav{
+  position:sticky; top:0; z-index:10;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 20px;
+  background:rgba(255,255,255,0.8);
+  backdrop-filter:saturate(140%) blur(10px);
+  border-bottom:1px solid var(--border);
+  border-radius:14px;
+  margin:12px auto 0;
+  max-width:1000px;
+  box-shadow:0 10px 30px rgba(49,130,206,.08);
+}
+.brand{font-weight:700; color:var(--text); text-decoration:none}
+.nav-links{display:flex; gap:12px; align-items:center}
+.nav-links a{
+  color:var(--text); text-decoration:none; padding:8px 12px; border-radius:10px;
+  position:relative; overflow:hidden; transition:transform .08s ease, background .2s ease;
+}
+.nav-links a:hover{background:#eef2ff; transform:translateY(-1px)}
+.nav-links a::after{
+  content:""; position:absolute; left:-20%; top:0; width:0; height:100%;
+  background: linear-gradient(90deg, transparent, rgba(79,157,246,.12), transparent);
+  transform: skewX(-20deg); transition: width .25s ease;
+}
+.nav-links a:hover::after{ width:140% }
+
+/* 5) Cards and forms — glass + focus glow */
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.75));
+  border:1px solid var(--border); border-radius:var(--radius);
+  padding:20px; box-shadow:0 14px 40px rgba(0,0,0,.06);
+  transition: transform .08s ease, box-shadow .2s ease;
+}
+.card:hover{ transform: translateY(-2px); box-shadow:0 18px 50px rgba(0,0,0,.08) }
+
+.form input,.form select,.form button{
+  width:100%; margin:10px 0; padding:12px 14px; border-radius:10px;
+  border:1px solid var(--border); outline:none; background:#fff; color:var(--text);
+  transition:border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,.02);
+}
+.form input:focus,.form select:focus{
+  border-color: rgba(79,157,246,.6);
+  box-shadow: 0 0 0 6px rgba(79,157,246,.12), inset 0 1px 0 rgba(0,0,0,.02);
+}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+
+/* 6) Buttons — energetic */
+.btn-primary{
+  background:linear-gradient(135deg,var(--primary),var(--primary-600));
+  color:#fff; border:none; cursor:pointer;
+  box-shadow:0 10px 20px rgba(79,157,246,.25);
+  transition:transform .08s ease, box-shadow .2s ease, filter .2s ease;
+}
+.btn-primary:hover{
+  transform:translateY(-2px); box-shadow:0 14px 28px rgba(79,157,246,.3);
+  filter:brightness(1.03) saturate(1.05);
+}
+.btn-secondary{
+  background:#e0f2fe; color:#0c4a6e; text-decoration:none; padding:8px 12px; border-radius:10px;
+  background: linear-gradient(180deg, #eef7ff, #e0f2fe);
+  border:1px solid var(--border); box-shadow:0 8px 20px rgba(14,116,144,.08);
+}
+.btn-outline{
+  border:1px solid var(--border); padding:8px 12px; border-radius:10px;
+  color:var(--text); text-decoration:none; transition:transform .05s ease, border-color .15s ease, color .15s ease;
+}
+.btn-outline:hover{ transform:translateY(-1px); border-color:var(--primary); color:var(--primary-600) }
+.btn-primary,.btn-secondary,.btn-outline{ transition:transform .05s ease }
+.btn-sm{padding:6px 10px; font-size:.9rem; border-radius:8px}
+
+/* 7) Lists, tables, errors */
+ul{padding-left:18px}
+.error{color:#b91c1c}
+
+/* 8) Icons + micro‑motion */
+@keyframes floaty { 0%{transform:translateY(0)} 50%{transform:translateY(-2px)} 100%{transform:translateY(0)} }
+.icon{width:18px; height:18px; display:inline-block; border-radius:6px; background:var(--accent); margin-right:6px; animation:floaty 3s ease-in-out infinite}
+
+/* 9) Dashboard quick actions spacing */
+.dash-actions{
+  list-style:none; margin:0; padding:0;
+  display:grid; grid-template-columns:1fr; gap:14px;
+}
+@media (min-width:700px){
+  .dash-actions{ grid-template-columns:1fr 1fr; }
+}
+.dash-actions .btn-secondary{
+  display:block; text-align:center; padding:18px 18px; border-radius:14px;
+  position:relative; overflow:hidden; transition:transform .08s ease;
+}
+.dash-actions .btn-secondary::before{
+  content:""; position:absolute; inset:0;
+  background: radial-gradient(1200px 80px at var(--x,50%) 0%, rgba(79,157,246,.12), transparent 60%);
+  opacity:0; transition: opacity .25s ease;
+}
+.dash-actions .btn-secondary:hover{ transform:translateY(-2px) }
+.dash-actions .btn-secondary:hover::before{ opacity:1 }
+
+/* 10) Meal list: elevated tiles + delete styling */
+.meal-list{list-style:none; padding:0; margin:0; display:grid; gap:10px}
+.meal-item{
+  display:flex; justify-content:space-between; align-items:center;
+  background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.8));
+  border:1px solid var(--border); padding:10px 12px; border-radius:12px;
+  box-shadow:0 10px 28px rgba(0,0,0,.05);
+}
+.meal-item span{
+  display:flex; align-items:center; gap:10px; color:var(--muted);
+}
+.meal-item span::before{
+  content:""; width:10px; height:10px; border-radius:50%;
+  background:linear-gradient(135deg, var(--accent), #34d399);
+  box-shadow:0 0 0 4px rgba(34,197,94,.15);
+}
+.inline-form{margin:0}
+.inline-form .btn-outline{
+  padding:6px 10px; border-radius:8px;
+  border-color:#f3d2bf; color:#9a3412;
+  background:linear-gradient(180deg, #fff7ed, #ffedd5);
+}
+.inline-form .btn-outline:hover{
+  border-color:#f59e0b; color:#7c2d12;
+}
+
+/* 11) Headings with accent underline */
+h1,h2,h3{ margin:10px 0 14px; letter-spacing:.2px }
+h3{ position:relative; display:inline-block; padding-bottom:6px }
+h3::after{
+  content:""; position:absolute; left:0; right:0; bottom:-2px; height:4px;
+  border-radius:4px; opacity:.35;
+  background:linear-gradient(90deg, var(--accent), var(--primary), var(--warn));
+}
+
+/* 12) Optional badges (use in reports) */
+.badge{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px; border-radius:999px; font-weight:600;
+  border:1px solid var(--border);
+}
+.badge.bmi{ background:#eef6ff; color:#0b3a69; border-color:#dbeafe }
+.badge.good{ background:#ecfdf5; color:#064e3b; border-color:#d1fae5 }
+.badge.warn{ background:#fff7ed; color:#7c2d12; border-color:#ffedd5 }
+
+/* 13) Page entrance animation */
+@keyframes fadeUp { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+.container{ animation: fadeUp .25s ease both }

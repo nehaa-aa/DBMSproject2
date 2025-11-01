@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Smart Nutrition{% endblock %}
+{% block content %}
+<div class="dashboard-grid">
+  <!-- Welcome Header -->
+  <div class="welcome-card card">
+    <h2>Welcome back, {{ user }}! 👋</h2>
+    <p class="muted">Track your progress, log meals, and achieve your health goals.</p>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="stats-grid">
+    <div class="stat-card card">
+      <div class="stat-icon bmi-icon">📊</div>
+      <div class="stat-content">
+        <p class="stat-label">Current BMI</p>
+        <p class="stat-value">{{ bio.bmi if bio else '—' }}</p>
+        {% if bio %}
+        <p class="stat-subtitle">
+          {% if bio.bmi < 18.5 %}Underweight
+          {% elif bio.bmi < 25 %}Normal
+          {% elif bio.bmi < 30 %}Overweight
+          {% else %}Obese
+          {% endif %}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="stat-card card">
+      <div class="stat-icon calorie-icon">🔥</div>
+      <div class="stat-content">
+        <p class="stat-label">Today's Calories</p>
+        <p class="stat-value">{{ today_calories.total|round|int if today_calories else 0 }}</p>
+        <p class="stat-subtitle">kcal consumed</p>
+      </div>
+    </div>
+
+    <div class="stat-card card">
+      <div class="stat-icon goal-icon">🎯</div>
+      <div class="stat-content">
+        <p class="stat-label">Current Goal</p>
+        <p class="stat-value">
+          {% if bio %}
+            {% if bio.goal == 'loss' %}Lose Weight
+            {% elif bio.goal == 'gain' %}Gain Weight
+            {% else %}Maintain
+            {% endif %}
+          {% else %}—{% endif %}
+        </p>
+        <p class="stat-subtitle">{{ bio.weight_kg if bio else '—' }} kg</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="card">
+    <h3>Quick Actions</h3>
+    <div class="action-grid">
+      <a href="/meal" class="action-button">
+        <span class="action-icon">🍽️</span>
+        <span class="action-text">
+          <strong>Log Meal</strong>
+          <small>Record your food intake</small>
+        </span>
+      </a>
+      
+      <a href="/biometrics" class="action-button">
+        <span class="action-icon">⚖️</span>
+        <span class="action-text">
+          <strong>Update Weight</strong>
+          <small>Track your progress</small>
+        </span>
+      </a>
+      
+      <a href="/progress" class="action-button">
+        <span class="action-icon">📈</span>
+        <span class="action-text">
+          <strong>View Progress</strong>
+          <small>Charts & predictions</small>
+        </span>
+      </a>
+      
+      <a href="/reports" class="action-button">
+        <span class="action-icon">📋</span>
+        <span class="action-text">
+          <strong>Reports</strong>
+          <small>Detailed insights</small>
+        </span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Health Tips -->
+  <div class="card tips-card">
+    <h3>💡 Today's Health Tip</h3>
+    {% if bio and bio.goal == 'loss' %}
+    <p>To lose weight healthily, aim for a calorie deficit of 500-750 kcal per day. This typically results in 0.5-1 kg weight loss per week.</p>
+    {% elif bio and bio.goal == 'gain' %}
+    <p>To gain weight healthily, aim for a calorie surplus of 300-500 kcal per day. Focus on nutrient-dense foods and strength training.</p>
+    {% else %}
+    <p>Maintaining a balanced diet with adequate protein, healthy fats, and complex carbohydrates supports overall health and energy levels.</p>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+.dashboard-grid {
+  display: grid;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.welcome-card {
+  text-align: center;
+  padding: 30px;
+  background: linear-gradient(135deg, rgba(79,157,246,0.1), rgba(34,197,94,0.1));
+}
+
+.welcome-card h2 {
+  margin: 0 0 10px;
+  font-size: 28px;
+  color: var(--text);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.stat-icon {
+  font-size: 36px;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(79,157,246,0.15), rgba(79,157,246,0.05));
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  margin: 4px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stat-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(247,250,252,0.9));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s ease;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  border-color: var(--primary);
+}
+
+.action-icon {
+  font-size: 32px;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(79,157,246,0.1), rgba(34,197,94,0.1));
+  border-radius: 10px;
+}
+
+.action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.action-text strong {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.action-text small {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.tips-card {
+  background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(34,197,94,0.08));
+  border-left: 4px solid var(--accent);
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,851 @@
+{% extends "base.html" %}
+{% block title %}Progress Tracking — Smart Nutrition{% endblock %}
+{% block content %}
+<div class="progress-container">
+  <div class="page-header">
+    <h2>📈 Your Health Progress</h2>
+    <p class="page-subtitle">Track your BMI trends, calorie intake, and get personalized predictions</p>
+  </div>
+
+  <!-- BMI Prediction Card -->
+  <div class="card prediction-card">
+    <div class="card-header">
+      <h3>🔮 BMI Prediction & Trend Analysis</h3>
+      <p class="muted">AI-powered predictions based on your historical data</p>
+    </div>
+    <div id="prediction-container">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Analyzing your data...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div class="charts-grid">
+    <!-- BMI Trend Chart -->
+    <div class="card chart-card">
+      <div class="card-header">
+        <h3>📊 BMI & Weight Trend</h3>
+        <p class="muted">Track your weight and BMI changes over time</p>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="bmiChart"></canvas>
+      </div>
+      <div class="chart-footer">
+        <button class="btn-chart-range active" data-days="30">30 Days</button>
+        <button class="btn-chart-range" data-days="60">60 Days</button>
+        <button class="btn-chart-range" data-days="90">90 Days</button>
+      </div>
+    </div>
+
+    <!-- Calorie Intake Chart -->
+    <div class="card chart-card">
+      <div class="card-header">
+        <h3>🔥 Daily Calorie Intake</h3>
+        <p class="muted">Monitor your daily calorie consumption patterns</p>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="calorieChart"></canvas>
+      </div>
+      <div class="chart-footer">
+        <button class="btn-chart-range active" data-days="7">7 Days</button>
+        <button class="btn-chart-range" data-days="14">14 Days</button>
+        <button class="btn-chart-range" data-days="30">30 Days</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nutrition Balance -->
+  {% if nutrition_balance %}
+  <div class="card nutrition-card">
+    <div class="card-header">
+      <h3>🥗 Nutritional Balance (Last 7 Days)</h3>
+      <p class="muted">Your macronutrient distribution and intake</p>
+    </div>
+    <div class="nutrition-bars">
+      <div class="nutrient-bar">
+        <div class="nutrient-info">
+          <span class="nutrient-icon">🥩</span>
+          <span class="nutrient-name">Protein</span>
+          <span class="nutrient-value">{{ nutrition_balance.total_protein|round(1) }}g</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill protein" style="width: {{ (nutrition_balance.total_protein / 500 * 100)|min(100) }}%">
+            <span class="progress-label">{{ ((nutrition_balance.total_protein / 500) * 100)|round(0)|int }}%</span>
+          </div>
+        </div>
+        <div class="nutrient-target">Target: ~500g/week</div>
+      </div>
+      
+      <div class="nutrient-bar">
+        <div class="nutrient-info">
+          <span class="nutrient-icon">🍞</span>
+          <span class="nutrient-name">Carbohydrates</span>
+          <span class="nutrient-value">{{ nutrition_balance.total_carbs|round(1) }}g</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill carbs" style="width: {{ (nutrition_balance.total_carbs / 1500 * 100)|min(100) }}%">
+            <span class="progress-label">{{ ((nutrition_balance.total_carbs / 1500) * 100)|round(0)|int }}%</span>
+          </div>
+        </div>
+        <div class="nutrient-target">Target: ~1500g/week</div>
+      </div>
+      
+      <div class="nutrient-bar">
+        <div class="nutrient-info">
+          <span class="nutrient-icon">🥑</span>
+          <span class="nutrient-name">Fats</span>
+          <span class="nutrient-value">{{ nutrition_balance.total_fat|round(1) }}g</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill fats" style="width: {{ (nutrition_balance.total_fat / 400 * 100)|min(100) }}%">
+            <span class="progress-label">{{ ((nutrition_balance.total_fat / 400) * 100)|round(0)|int }}%</span>
+          </div>
+        </div>
+        <div class="nutrient-target">Target: ~400g/week</div>
+      </div>
+    </div>
+    
+    <!-- Macro Pie Chart -->
+    <div style="margin-top: 32px;">
+      <h4 style="margin-bottom: 16px;">Macronutrient Distribution</h4>
+      <div style="max-width: 300px; margin: 0 auto;">
+        <canvas id="macroChart"></canvas>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Current Stats Summary -->
+  {% if current_bio %}
+  <div class="card stats-summary">
+    <div class="card-header">
+      <h3>📋 Current Status Overview</h3>
+      <p class="muted">Your latest biometric measurements</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-icon weight">⚖️</div>
+        <div class="stat-details">
+          <span class="stat-label">Current Weight</span>
+          <span class="stat-number">{{ current_bio.weight_kg }} kg</span>
+        </div>
+      </div>
+      
+      <div class="stat-item">
+        <div class="stat-icon height">📏</div>
+        <div class="stat-details">
+          <span class="stat-label">Height</span>
+          <span class="stat-number">{{ current_bio.height_cm }} cm</span>
+        </div>
+      </div>
+      
+      <div class="stat-item">
+        <div class="stat-icon bmi">📊</div>
+        <div class="stat-details">
+          <span class="stat-label">BMI</span>
+          <span class="stat-number bmi-value">{{ current_bio.bmi }}</span>
+        </div>
+      </div>
+      
+      <div class="stat-item">
+        <div class="stat-icon goal">🎯</div>
+        <div class="stat-details">
+          <span class="stat-label">Health Goal</span>
+          <span class="stat-number">{{ current_bio.goal|capitalize }}</span>
+        </div>
+      </div>
+      
+      {% if current_bio.target_weight_kg %}
+      <div class="stat-item">
+        <div class="stat-icon target">🏁</div>
+        <div class="stat-details">
+          <span class="stat-label">Target Weight</span>
+          <span class="stat-number">{{ current_bio.target_weight_kg }} kg</span>
+        </div>
+      </div>
+      {% endif %}
+      
+      <div class="stat-item">
+        <div class="stat-icon activity">🏃</div>
+        <div class="stat-details">
+          <span class="stat-label">Activity Level</span>
+          <span class="stat-number">{{ current_bio.activity_level|replace('_', ' ')|title }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card empty-state">
+    <div class="empty-icon">📊</div>
+    <h3>No Data Yet</h3>
+    <p>Add your biometrics to start tracking your progress and get personalized predictions!</p>
+    <a href="/biometrics" class="btn-primary">Add Biometrics Now</a>
+  </div>
+  {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+let bmiChart, calorieChart, macroChart;
+
+// Fetch and display BMI prediction
+async function loadPrediction() {
+  try {
+    const response = await fetch('/api/predict-bmi');
+    const data = await response.json();
+    
+    if (data.error) {
+      document.getElementById('prediction-container').innerHTML = 
+        `<div class="empty-prediction">
+          <p class="muted">${data.error}</p>
+          <p class="muted">Add more biometric entries over different days to enable predictions.</p>
+        </div>`;
+      return;
+    }
+    
+    const trendEmoji = data.trend === 'gaining' ? '📈' : data.trend === 'losing' ? '📉' : '➡️';
+    const trendClass = data.trend === 'gaining' ? 'gaining' : data.trend === 'losing' ? 'losing' : 'stable';
+    
+    let html = `
+      <div class="prediction-summary">
+        <div class="current-status">
+          <div class="status-item">
+            <span class="status-label">Current Weight</span>
+            <span class="status-value">${data.current_weight} kg</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Weight Trend</span>
+            <span class="status-value trend ${trendClass}">${trendEmoji} ${data.trend}</span>
+          </div>
+        </div>
+      </div>
+      <div class="predictions-grid">
+    `;
+    
+    data.predictions.forEach(pred => {
+      const bmiClass = pred.bmi < 18.5 ? 'underweight' : pred.bmi < 25 ? 'normal' : pred.bmi < 30 ? 'overweight' : 'obese';
+      html += `
+        <div class="prediction-item ${bmiClass}">
+          <div class="pred-timeline">
+            <span class="pred-icon">📅</span>
+            <span class="pred-days">${pred.days} Days</span>
+          </div>
+          <div class="pred-data">
+            <div class="pred-weight">${pred.weight} kg</div>
+            <div class="pred-bmi">BMI: ${pred.bmi}</div>
+          </div>
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+    document.getElementById('prediction-container').innerHTML = html;
+  } catch (error) {
+    document.getElementById('prediction-container').innerHTML = 
+      '<div class="empty-prediction"><p class="muted">Unable to load predictions</p></div>';
+  }
+}
+
+// Load BMI trend chart
+async function loadBMIChart(days = 30) {
+  try {
+    const response = await fetch(`/api/bmi-trend?days=${days}`);
+    const data = await response.json();
+    
+    if (!data || data.length === 0) {
+      return;
+    }
+    
+    const ctx = document.getElementById('bmiChart');
+    
+    if (bmiChart) {
+      bmiChart.destroy();
+    }
+    
+    bmiChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+        datasets: [{
+          label: 'Weight (kg)',
+          data: data.map(d => d.weight_kg),
+          borderColor: '#4f9df6',
+          backgroundColor: 'rgba(79, 157, 246, 0.1)',
+          tension: 0.4,
+          fill: true,
+          yAxisID: 'y',
+        }, {
+          label: 'BMI',
+          data: data.map(d => d.bmi),
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          tension: 0.4,
+          fill: true,
+          yAxisID: 'y1',
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+          }
+        },
+        scales: {
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Weight (kg)'
+            }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: {
+              display: true,
+              text: 'BMI'
+            },
+            grid: {
+              drawOnChartArea: false,
+            }
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error loading BMI chart:', error);
+  }
+}
+
+// Load calorie trend chart
+async function loadCalorieChart(days = 14) {
+  try {
+    const response = await fetch(`/api/calorie-trend?days=${days}`);
+    const data = await response.json();
+    
+    if (!data || data.length === 0) {
+      return;
+    }
+    
+    const ctx = document.getElementById('calorieChart');
+    
+    if (calorieChart) {
+      calorieChart.destroy();
+    }
+    
+    calorieChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+        datasets: [{
+          label: 'Calories (kcal)',
+          data: data.map(d => d.total_calories),
+          backgroundColor: 'rgba(245, 158, 11, 0.6)',
+          borderColor: '#f59e0b',
+          borderWidth: 2,
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Calories (kcal)'
+            }
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error loading calorie chart:', error);
+  }
+}
+
+// Load macro pie chart
+function loadMacroChart() {
+  {% if nutrition_balance %}
+  const ctx = document.getElementById('macroChart');
+  
+  if (macroChart) {
+    macroChart.destroy();
+  }
+  
+  macroChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Protein', 'Carbs', 'Fats'],
+      datasets: [{
+        data: [
+          {{ nutrition_balance.total_protein|round(1) }},
+          {{ nutrition_balance.total_carbs|round(1) }},
+          {{ nutrition_balance.total_fat|round(1) }}
+        ],
+        backgroundColor: [
+          'rgba(239, 68, 68, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(34, 197, 94, 0.8)'
+        ],
+        borderWidth: 2,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+        }
+      }
+    }
+  });
+  {% endif %}
+}
+
+// Chart range buttons
+document.querySelectorAll('.btn-chart-range').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const days = parseInt(this.dataset.days);
+    const chartType = this.closest('.chart-card').querySelector('canvas').id;
+    
+    // Remove active class from siblings
+    this.parentElement.querySelectorAll('.btn-chart-range').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    
+    if (chartType === 'bmiChart') {
+      loadBMIChart(days);
+    } else if (chartType === 'calorieChart') {
+      loadCalorieChart(days);
+    }
+  });
+});
+
+// Load all data on page load
+document.addEventListener('DOMContentLoaded', () => {
+  loadPrediction();
+  loadBMIChart(30);
+  loadCalorieChart(14);
+  loadMacroChart();
+});
+</script>
+
+<style>
+.progress-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.page-header h2 {
+  font-size: 36px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.card-header {
+  margin-bottom: 20px;
+}
+
+.card-header h3 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  color: var(--text);
+}
+
+.card-header .muted {
+  font-size: 14px;
+  margin: 0;
+}
+
+.prediction-card {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(79, 157, 246, 0.08));
+  border-left: 4px solid rgb(139, 92, 246);
+  margin-bottom: 32px;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px;
+  color: var(--muted);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(79, 157, 246, 0.2);
+  border-top-color: #4f9df6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.prediction-summary {
+  margin-bottom: 24px;
+}
+
+.current-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.status-label {
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.status-value.trend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trend.gaining { color: #ef4444; }
+.trend.losing { color: #22c55e; }
+.trend.stable { color: #6b7280; }
+
+.predictions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.prediction-item {
+  padding: 20px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.prediction-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.prediction-item.underweight { border-color: #fbbf24; background: rgba(251, 191, 36, 0.05); }
+.prediction-item.normal { border-color: #22c55e; background: rgba(34, 197, 94, 0.05); }
+.prediction-item.overweight { border-color: #f97316; background: rgba(249, 115, 22, 0.05); }
+.prediction-item.obese { border-color: #ef4444; background: rgba(239, 68, 68, 0.05); }
+
+.pred-timeline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pred-icon {
+  font-size: 20px;
+}
+
+.pred-days {
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.pred-weight {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.pred-bmi {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.chart-wrapper {
+  height: 300px;
+  position: relative;
+}
+
+.chart-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-chart-range {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-chart-range:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-chart-range.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.nutrition-card {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(255, 255, 255, 0.95));
+  margin-bottom: 32px;
+}
+
+.nutrition-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.nutrient-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nutrient-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nutrient-icon {
+  font-size: 24px;
+}
+
+.nutrient-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.nutrient-value {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.progress-bar {
+  height: 32px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 16px;
+  transition: width 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+}
+
+.progress-label {
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.progress-fill.protein {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.progress-fill.carbs {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.progress-fill.fats {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.nutrient-target {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  padding-left: 36px;
+}
+
+.stats-summary {
+  background: linear-gradient(135deg, rgba(79, 157, 246, 0.05), rgba(34, 197, 94, 0.05));
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(79,157,246,0.1), rgba(34,197,94,0.1));
+}
+
+.stat-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-number {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stat-number.bmi-value {
+  color: var(--primary);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  margin: 0 0 12px;
+  font-size: 24px;
+  color: var(--text);
+}
+
+.empty-state p {
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+.empty-prediction {
+  text-align: center;
+  padding: 40px 24px;
+}
+
+@media (max-width: 768px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .predictions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .current-status {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+{% endblock %}

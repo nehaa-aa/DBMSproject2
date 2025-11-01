@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Nutrition & BMI Tracker - Your Health Companion</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    /* Landing Page Specific Styles */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+      overflow-x: hidden;
+    }
+    
+    /* Animated Gradient Background */
+    .landing-wrapper {
+      background: linear-gradient(-45deg, #f0f9ff, #f0fff4, #fef3c7, #fce7f3);
+      background-size: 400% 400%;
+      animation: gradientFlow 15s ease infinite;
+      min-height: 100vh;
+    }
+    
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    /* Navigation */
+    .landing-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.04);
+    }
+    
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 22px;
+      font-weight: 800;
+      color: #1f2937;
+      text-decoration: none;
+    }
+    
+    .logo-icon {
+      font-size: 32px;
+    }
+    
+    .nav-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .btn {
+      padding: 10px 24px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .btn-outline {
+      background: transparent;
+      color: #4f9df6;
+      border: 2px solid #4f9df6;
+    }
+    
+    .btn-outline:hover {
+      background: rgba(79, 157, 246, 0.08);
+      transform: translateY(-1px);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #4f9df6, #3182ce);
+      color: white;
+      box-shadow: 0 4px 14px rgba(79, 157, 246, 0.3);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(79, 157, 246, 0.4);
+    }
+    
+    /* Hero Section */
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 80px 24px;
+      text-align: center;
+    }
+    
+    .hero-badge {
+      display: inline-block;
+      padding: 8px 20px;
+      background: rgba(79, 157, 246, 0.12);
+      color: #3182ce;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      animation: fadeInUp 0.6s ease;
+    }
+    
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #1f2937, #4f9df6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: fadeInUp 0.6s ease 0.1s both;
+    }
+    
+    .hero-subtitle {
+      font-size: clamp(18px, 2.5vw, 22px);
+      color: #6b7280;
+      max-width: 700px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+      animation: fadeInUp 0.6s ease 0.2s both;
+    }
+    
+    .hero-cta {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.6s ease 0.3s both;
+    }
+    
+    .btn-large {
+      padding: 16px 40px;
+      font-size: 18px;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* Features Section */
+    .features {
+      max-width: 1200px;
+      margin: 80px auto;
+      padding: 0 24px;
+    }
+    
+    .section-header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+    
+    .section-title {
+      font-size: clamp(32px, 4vw, 48px);
+      font-weight: 800;
+      margin-bottom: 16px;
+      color: #1f2937;
+    }
+    
+    .section-subtitle {
+      font-size: 18px;
+      color: #6b7280;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 32px;
+    }
+    
+    .feature-card {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 20px;
+      padding: 36px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #4f9df6, #22c55e, #f59e0b);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+    
+    .feature-card:hover::before {
+      transform: scaleX(1);
+    }
+    
+    .feature-icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+      display: block;
+    }
+    
+    .feature-card h3 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #1f2937;
+    }
+    
+    .feature-card p {
+      color: #6b7280;
+      line-height: 1.7;
+    }
+    
+    /* Stats Section */
+    .stats {
+      background: linear-gradient(135deg, rgba(79, 157, 246, 0.1), rgba(34, 197, 94, 0.1));
+      border-radius: 24px;
+      padding: 60px 24px;
+      margin: 80px auto;
+      max-width: 1200px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 40px;
+      text-align: center;
+    }
+    
+    .stat-item {
+      animation: fadeInUp 0.6s ease;
+    }
+    
+    .stat-number {
+      font-size: 48px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #4f9df6, #22c55e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    
+    .stat-label {
+      font-size: 16px;
+      color: #6b7280;
+      font-weight: 600;
+    }
+    
+    /* CTA Section */
+    .cta-section {
+      max-width: 900px;
+      margin: 100px auto;
+      padding: 60px 24px;
+      text-align: center;
+      background: linear-gradient(135deg, rgba(79, 157, 246, 0.08), rgba(255, 255, 255, 0.95));
+      border-radius: 24px;
+      border: 1px solid rgba(79, 157, 246, 0.2);
+    }
+    
+    .cta-section h2 {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      margin-bottom: 20px;
+      color: #1f2937;
+    }
+    
+    .cta-section p {
+      font-size: 18px;
+      color: #6b7280;
+      margin-bottom: 32px;
+    }
+    
+    /* Footer */
+    .landing-footer {
+      background: rgba(31, 41, 55, 0.95);
+      color: white;
+      padding: 60px 24px 24px;
+      margin-top: 100px;
+    }
+    
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+    
+    .footer-section h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: white;
+    }
+    
+    .footer-section p,
+    .footer-section a {
+      color: #9ca3af;
+      text-decoration: none;
+      font-size: 14px;
+      line-height: 2;
+      display: block;
+    }
+    
+    .footer-section a:hover {
+      color: #4f9df6;
+    }
+    
+    .footer-bottom {
+      text-align: center;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #9ca3af;
+      font-size: 14px;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .hero {
+        padding: 60px 24px;
+      }
+      
+      .hero-cta {
+        flex-direction: column;
+      }
+      
+      .btn-large {
+        width: 100%;
+      }
+      
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .nav-actions {
+        gap: 8px;
+      }
+      
+      .btn {
+        padding: 8px 16px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="landing-wrapper">
+    <!-- Navigation -->
+    <nav class="landing-nav">
+      <div class="nav-container">
+        <a href="/" class="logo">
+          <span class="logo-icon">🥗</span>
+          <span>Smart Nutrition</span>
+        </a>
+        <div class="nav-actions">
+          <a href="/login" class="btn btn-outline">Login</a>
+          <a href="/signup" class="btn btn-primary">Get Started Free</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-badge">✨ Free Forever • No Credit Card Required</div>
+      <h1>Transform Your Health Journey with Smart Nutrition</h1>
+      <p class="hero-subtitle">
+        Track your BMI, log meals, and achieve your fitness goals with AI-powered insights. 
+        Join thousands making smarter nutrition choices every day.
+      </p>
+      <div class="hero-cta">
+        <a href="/signup" class="btn btn-primary btn-large">Start Your Journey →</a>
+        <a href="/login" class="btn btn-outline btn-large">Sign In</a>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number">35+</div>
+          <div class="stat-label">Food Items</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">100%</div>
+          <div class="stat-label">Free to Use</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">24/7</div>
+          <div class="stat-label">Access</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">Instant</div>
+          <div class="stat-label">BMI Calculation</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+      <div class="section-header">
+        <h2 class="section-title">Everything You Need to Succeed</h2>
+        <p class="section-subtitle">Powerful features designed to help you reach your health goals</p>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">📊</span>
+          <h3>BMI Tracking & Prediction</h3>
+          <p>Automatic BMI calculation with AI-powered predictions for 30, 60, and 90 days ahead. Track your progress with beautiful charts.</p>
+        </div>
+        
+        <div class="feature-card">
+          <span class="feature-icon">🍽️</span>
+          <h3>Smart Meal Logging</h3>
+          <p>Log meals in seconds with our extensive food database. Get instant calorie and nutrition calculations for every meal.</p>
+        </div>
+        
+        <div class="feature-card">
+          <span class="feature-icon">📈</span>
+          <h3>Progress Visualization</h3>
+          <p>Interactive charts showing your BMI trends, calorie intake, and nutritional balance. See your progress at a glance.</p>
+        </div>
+        
+        <div class="feature-card">
+          <span class="feature-icon">🎯</span>
+          <h3>Personalized Goals</h3>
+          <p>Set weight loss, gain, or maintenance goals. Get customized recommendations based on your activity level and targets.</p>
+        </div>
+        
+        <div class="feature-card">
+          <span class="feature-icon">💡</span>
+          <h3>Health Insights</h3>
+          <p>Receive personalized nutrition recommendations and health tips based on your BMI, goals, and eating patterns.</p>
+        </div>
+        
+        <div class="feature-card">
+          <span class="feature-icon">🔒</span>
+          <h3>Secure & Private</h3>
+          <p>Your data is encrypted and secure. Only you can see your health information. Privacy is our top priority.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="features" style="margin-top: 120px;">
+      <div class="section-header">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtitle">Get started in 3 simple steps</p>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">1️⃣</span>
+          <h3>Create Your Account</h3>
+          <p>Sign up in 30 seconds. Enter your basic info and health goals. No credit card required.</p>
+        </div>
+        
+        <div class="feature-card">
+          <span class="feature-icon">2️⃣</span>
+          <h3>Add Your Biometrics</h3>
+          <p>Input your height and weight. We'll calculate your BMI automatically and track changes over time.</p>
+        </div>
+        
+        <div class="feature-card">
+          <span class="feature-icon">3️⃣</span>
+          <h3>Start Logging & Tracking</h3>
+          <p>Log your meals, view insights, and watch your progress. Achieve your goals with data-driven decisions.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+      <h2>Ready to Start Your Health Journey?</h2>
+      <p>Join today and take control of your nutrition. It's completely free!</p>
+      <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+        <a href="/signup" class="btn btn-primary btn-large">Create Free Account</a>
+        <a href="/login" class="btn btn-outline btn-large">I Have an Account</a>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>Smart Nutrition</h4>
+          <p>Your personal health companion for tracking BMI, nutrition, and achieving fitness goals with smart insights.</p>
+        </div>
+        
+        <div class="footer-section">
+          <h4>Product</h4>
+          <a href="/signup">Sign Up</a>
+          <a href="/login">Login</a>
+          <a href="#features">Features</a>
+          <a href="#how-it-works">How It Works</a>
+        </div>
+        
+        <div class="footer-section">
+          <h4>Resources</h4>
+          <a href="#">Help Center</a>
+          <a href="#">BMI Guide</a>
+          <a href="#">Nutrition Tips</a>
+          <a href="#">Blog</a>
+        </div>
+        
+        <div class="footer-section">
+          <h4>Legal</h4>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Cookie Policy</a>
+          <a href="#">Contact Us</a>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2025 Smart Nutrition & BMI Tracker. Built with ❤️ for healthy living.</p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

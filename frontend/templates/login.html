@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% set hide_nav = True %}
+{% block title %}Login — Smart Nutrition{% endblock %}
+{% block content %}
+<h3>Login</h3>
+<form method="post">
+<input type="email" name="email" placeholder="Email" required>
+<input type="password" name="password" placeholder="Password" required>
+<button type="submit">Login</button>
+</form>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+{% endblock %}
