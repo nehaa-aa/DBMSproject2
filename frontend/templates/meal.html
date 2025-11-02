@@ -79,6 +79,28 @@
                 <span class="preview-value" id="previewFat">0g</span>
                 <span class="preview-label">Fat</span>
               </div>
+            <!-- In meal.html, add these to the nutrition preview -->
+            <div class="preview-item">
+              <span class="preview-icon">🌾</span>
+              <div>
+                <span class="preview-value" id="previewFiber">0g</span>
+                <span class="preview-label">Fiber</span>
+              </div>
+            </div>
+            <div class="preview-item">
+              <span class="preview-icon">🍬</span>
+              <div>
+                <span class="preview-value" id="previewSugar">0g</span>
+                <span class="preview-label">Sugar</span>
+              </div>
+            </div>
+            <div class="preview-item">
+              <span class="preview-icon">🧂</span>
+              <div>
+                <span class="preview-value" id="previewSodium">0mg</span>
+                <span class="preview-label">Sodium</span>
+              </div>
+            </div>
             </div>
           </div>
         </div>
@@ -158,6 +180,9 @@ function updateNutritionInfo() {
   const protein = parseFloat(option.dataset.protein || 0);
   const carbs = parseFloat(option.dataset.carbs || 0);
   const fat = parseFloat(option.dataset.fat || 0);
+  const fiber = parseFloat(option.dataset.fiber || 0);
+  const sugar = parseFloat(option.dataset.sugar || 0);
+  const sodium = parseFloat(option.dataset.sodium || 0);
   
   const factor = quantity / 100;
   
@@ -165,7 +190,9 @@ function updateNutritionInfo() {
   document.getElementById('previewProtein').textContent = (protein * factor).toFixed(1) + 'g';
   document.getElementById('previewCarbs').textContent = (carbs * factor).toFixed(1) + 'g';
   document.getElementById('previewFat').textContent = (fat * factor).toFixed(1) + 'g';
-  
+  document.getElementById('previewFiber').textContent = (fiber * factor).toFixed(1) + 'g';
+  document.getElementById('previewSugar').textContent = (sugar * factor).toFixed(1) + 'g';
+  document.getElementById('previewSodium').textContent = (sodium * factor).toFixed(0) + 'mg';
   preview.style.display = 'block';
 }
 
