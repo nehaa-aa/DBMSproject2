@@ -1,0 +1,1037 @@
+{% extends "base.html" %}
+{% block title %}AI Insights — Smart Nutrition{% endblock %}
+{% block content %}
+<div class="insights-container">
+  <div class="page-header">
+    <h2>🤖 AI-Powered Health Insights</h2>
+    <p class="page-subtitle">Machine learning analysis of your nutrition patterns and predictions</p>
+  </div>
+
+  <!-- Nutrition Score Card -->
+  <div class="card score-card">
+    <div class="card-header">
+      <h3>📊 Your Nutrition Health Score</h3>
+      <p class="muted">Comprehensive health score based on multiple factors</p>
+    </div>
+    <div id="nutritionScore">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Calculating your score...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two Column Layout -->
+  <div class="insights-grid">
+    <!-- Advanced BMI Prediction -->
+    <div class="card prediction-card">
+      <div class="card-header">
+        <h3>🔮 Advanced BMI Prediction</h3>
+        <p class="muted">AI-powered weight and BMI forecasting</p>
+      </div>
+      <div id="bmiPrediction">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Analyzing trends...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Eating Patterns -->
+    <div class="card patterns-card">
+      <div class="card-header">
+        <h3>🕐 Eating Pattern Analysis</h3>
+        <p class="muted">Discover your eating habits and routines</p>
+      </div>
+      <div id="eatingPatterns">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Detecting patterns...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Anomaly Detection -->
+  <div class="card anomaly-card">
+    <div class="card-header">
+      <h3>⚠️ Calorie Intake Anomalies</h3>
+      <p class="muted">Days with unusual calorie consumption patterns</p>
+    </div>
+    <div id="anomalyDetection">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Scanning for anomalies...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meal Time Suggestions -->
+  <div class="card suggestions-card">
+    <div class="card-header">
+      <h3>⏰ Personalized Meal Time Suggestions</h3>
+      <p class="muted">Optimal meal times based on your habits</p>
+    </div>
+    <div id="mealTimeSuggestions">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Learning your schedule...</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+<script>
+// Load Nutrition Score
+async function loadNutritionScore() {
+  try {
+    const response = await fetch('/api/ml-nutrition-score');
+    const data = await response.json();
+    
+    if (data.error) {
+      document.getElementById('nutritionScore').innerHTML = 
+        `<div class="empty-state"><p class="muted">${data.error}</p></div>`;
+      return;
+    }
+    
+    const scoreClass = data.total_score >= 80 ? 'excellent' : 
+                       data.total_score >= 60 ? 'good' : 
+                       data.total_score >= 40 ? 'fair' : 'poor';
+    
+    let html = `
+      <div class="score-display">
+        <div class="score-circle ${scoreClass}">
+          <svg viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="90" fill="none" stroke="#e5e7eb" stroke-width="12"/>
+            <circle cx="100" cy="100" r="90" fill="none" stroke="currentColor" stroke-width="12"
+                    stroke-dasharray="${data.total_score * 5.65} 565" 
+                    stroke-dashoffset="141.25"
+                    transform="rotate(-90 100 100)"/>
+          </svg>
+          <div class="score-value">
+            <span class="score-number">${data.total_score}</span>
+            <span class="score-label">/100</span>
+          </div>
+        </div>
+        <div class="score-details">
+          <h4>${data.rating}</h4>
+          <p class="muted">Based on ${data.days_analyzed} days of data</p>
+        </div>
+      </div>
+      
+      <div class="score-breakdown">
+        <h4>Score Breakdown</h4>
+        <div class="breakdown-grid">
+          <div class="breakdown-item">
+            <span class="breakdown-label">Calorie Consistency</span>
+            <div class="breakdown-bar">
+              <div class="breakdown-fill" style="width: ${(data.breakdown.consistency/30*100)}%"></div>
+            </div>
+            <span class="breakdown-value">${data.breakdown.consistency.toFixed(1)}/30</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="breakdown-label">Macro Balance</span>
+            <div class="breakdown-bar">
+              <div class="breakdown-fill" style="width: ${(data.breakdown.macro_balance/30*100)}%"></div>
+            </div>
+            <span class="breakdown-value">${data.breakdown.macro_balance.toFixed(1)}/30</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="breakdown-label">Meal Frequency</span>
+            <div class="breakdown-bar">
+              <div class="breakdown-fill" style="width: ${(data.breakdown.meal_frequency/20*100)}%"></div>
+            </div>
+            <span class="breakdown-value">${data.breakdown.meal_frequency.toFixed(1)}/20</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="breakdown-label">Eating Pattern</span>
+            <div class="breakdown-bar">
+              <div class="breakdown-fill" style="width: ${(data.breakdown.eating_pattern/20*100)}%"></div>
+            </div>
+            <span class="breakdown-value">${data.breakdown.eating_pattern.toFixed(1)}/20</span>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('nutritionScore').innerHTML = html;
+  } catch (error) {
+    document.getElementById('nutritionScore').innerHTML = 
+      '<div class="empty-state"><p class="muted">Unable to calculate score</p></div>';
+  }
+}
+
+// Load BMI Prediction
+async function loadBMIPrediction() {
+  try {
+    const response = await fetch('/api/ml-predict-bmi');
+    const data = await response.json();
+    
+    if (data.error) {
+      document.getElementById('bmiPrediction').innerHTML = 
+        `<div class="empty-state"><p class="muted">${data.error}</p></div>`;
+      return;
+    }
+    
+    const trendEmoji = data.trend === 'gaining' ? '📈' : data.trend === 'losing' ? '📉' : '➡️';
+    const trendClass = data.trend === 'gaining' ? 'gaining' : data.trend === 'losing' ? 'losing' : 'stable';
+    
+    let html = `
+      <div class="prediction-summary">
+        <div class="current-stats">
+          <div class="stat-box">
+            <span class="stat-label">Current Weight</span>
+            <span class="stat-value">${data.current_weight} kg</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Trend</span>
+            <span class="stat-value trend ${trendClass}">${trendEmoji} ${data.trend}</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Confidence</span>
+            <span class="stat-value">${data.confidence}%</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="predictions-timeline">
+        <h4>Future Predictions</h4>
+    `;
+    
+    data.predictions.forEach(pred => {
+      const bmiClass = pred.bmi < 18.5 ? 'underweight' : 
+                       pred.bmi < 25 ? 'normal' : 
+                       pred.bmi < 30 ? 'overweight' : 'obese';
+      html += `
+        <div class="prediction-row ${bmiClass}">
+          <div class="pred-time">
+            <span class="pred-icon">📅</span>
+            <span class="pred-days">${pred.days} days</span>
+          </div>
+          <div class="pred-data">
+            <span class="pred-weight">${pred.weight} kg</span>
+            <span class="pred-bmi">BMI: ${pred.bmi}</span>
+          </div>
+          <div class="pred-indicator ${bmiClass}"></div>
+        </div>
+      `;
+    });
+    
+    html += `</div>
+      <p class="prediction-note">
+        <strong>Note:</strong> Predictions based on ${data.data_points} data points. 
+        More data = better accuracy!
+      </p>
+    `;
+    
+    document.getElementById('bmiPrediction').innerHTML = html;
+  } catch (error) {
+    document.getElementById('bmiPrediction').innerHTML = 
+      '<div class="empty-state"><p class="muted">Unable to load predictions</p></div>';
+  }
+}
+
+// Load Eating Patterns
+async function loadEatingPatterns() {
+  try {
+    const response = await fetch('/api/ml-eating-patterns');
+    const data = await response.json();
+    
+    if (data.error) {
+      document.getElementById('eatingPatterns').innerHTML = 
+        `<div class="empty-state"><p class="muted">${data.error}</p></div>`;
+      return;
+    }
+    
+    let html = `
+      <div class="patterns-grid">
+        <div class="pattern-box">
+          <div class="pattern-icon">🕐</div>
+          <div class="pattern-content">
+            <h4>Peak Eating Hours</h4>
+            <ul class="pattern-list">
+              ${data.peak_eating_hours.map(h => `<li>${h}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+        
+        <div class="pattern-box">
+          <div class="pattern-icon">❤️</div>
+          <div class="pattern-content">
+            <h4>Favorite Foods</h4>
+            <ul class="pattern-list">
+              ${Object.entries(data.favorite_foods).slice(0, 5).map(([food, count]) => 
+                `<li>${food} <span class="count">(${count}x)</span></li>`
+              ).join('')}
+            </ul>
+          </div>
+        </div>
+        
+        <div class="pattern-box">
+          <div class="pattern-icon">📊</div>
+          <div class="pattern-content">
+            <h4>Calorie Consistency</h4>
+            <div class="consistency-meter">
+              <div class="meter-fill ${data.consistency}" 
+                   style="width: ${data.consistency_score}%"></div>
+            </div>
+            <p>${data.consistency.toUpperCase()} (${data.consistency_score}%)</p>
+            <p class="muted">${data.avg_daily_calories} kcal/day average</p>
+          </div>
+        </div>
+        
+        <div class="pattern-box">
+          <div class="pattern-icon">📅</div>
+          <div class="pattern-content">
+            <h4>Weekend vs Weekday</h4>
+            <div class="comparison">
+              <div class="comp-item">
+                <span class="comp-label">Weekdays</span>
+                <span class="comp-value">${data.weekday_avg_calories} kcal</span>
+              </div>
+              <div class="comp-item">
+                <span class="comp-label">Weekends</span>
+                <span class="comp-value">${data.weekend_avg_calories} kcal</span>
+              </div>
+            </div>
+            <p class="insight">You eat more on <strong>${data.eats_more_on}</strong></p>
+          </div>
+        </div>
+        
+        <div class="pattern-box">
+          <div class="pattern-icon">🍽️</div>
+          <div class="pattern-content">
+            <h4>Meal Frequency</h4>
+            <p class="big-stat">${data.meals_per_day}</p>
+            <p class="muted">meals per day</p>
+            <p class="insight">${data.total_meals_analyzed} meals analyzed</p>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('eatingPatterns').innerHTML = html;
+  } catch (error) {
+    document.getElementById('eatingPatterns').innerHTML = 
+      '<div class="empty-state"><p class="muted">Unable to analyze patterns</p></div>';
+  }
+}
+
+// Load Anomaly Detection
+async function loadAnomalyDetection() {
+  try {
+    const response = await fetch('/api/ml-anomaly-detection');
+    const data = await response.json();
+    
+    if (data.error) {
+      document.getElementById('anomalyDetection').innerHTML = 
+        `<div class="empty-state"><p class="muted">${data.error}</p></div>`;
+      return;
+    }
+    
+    let html = `
+      <div class="anomaly-summary">
+        <div class="summary-stats">
+          <div class="summary-item">
+            <span class="summary-label">Average Daily Intake</span>
+            <span class="summary-value">${data.average_daily} kcal</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Consistency Score</span>
+            <span class="summary-value">${data.consistency_score}%</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Recent Trend</span>
+            <span class="summary-value trend-${data.recent_trend}">${data.recent_trend}</span>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    if (data.anomalies.length === 0) {
+      html += `
+        <div class="no-anomalies">
+          <div class="success-icon">✅</div>
+          <h4>Great consistency!</h4>
+          <p>No unusual eating days detected in the last ${data.days_analyzed} days.</p>
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="anomalies-list">
+          <h4>Detected Anomalies (${data.anomalies.length})</h4>
+      `;
+      
+      data.anomalies.forEach(anomaly => {
+        const typeClass = anomaly.type === 'high' ? 'high-cal' : 'low-cal';
+        const typeIcon = anomaly.type === 'high' ? '⬆️' : '⬇️';
+        const typeText = anomaly.type === 'high' ? 'High Intake' : 'Low Intake';
+        
+        html += `
+          <div class="anomaly-item ${typeClass}">
+            <div class="anomaly-icon">${typeIcon}</div>
+            <div class="anomaly-details">
+              <div class="anomaly-date">${new Date(anomaly.date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</div>
+              <div class="anomaly-type">${typeText}</div>
+            </div>
+            <div class="anomaly-stats">
+              <span class="anomaly-calories">${anomaly.calories} kcal</span>
+              <span class="anomaly-deviation">${anomaly.deviation}</span>
+            </div>
+          </div>
+        `;
+      });
+      
+      html += `</div>`;
+    }
+    
+    document.getElementById('anomalyDetection').innerHTML = html;
+  } catch (error) {
+    document.getElementById('anomalyDetection').innerHTML = 
+      '<div class="empty-state"><p class="muted">Unable to detect anomalies</p></div>';
+  }
+}
+
+// Load Meal Time Suggestions
+async function loadMealTimeSuggestions() {
+  try {
+    const response = await fetch('/api/ml-meal-time-suggestion');
+    const data = await response.json();
+    
+    let html = `
+      <div class="suggestions-grid">
+        <div class="suggestion-item breakfast">
+          <div class="suggestion-icon">🌅</div>
+          <div class="suggestion-content">
+            <h4>Breakfast</h4>
+            <div class="suggested-time">${data.breakfast}</div>
+          </div>
+        </div>
+        
+        <div class="suggestion-item lunch">
+          <div class="suggestion-icon">☀️</div>
+          <div class="suggestion-content">
+            <h4>Lunch</h4>
+            <div class="suggested-time">${data.lunch}</div>
+          </div>
+        </div>
+        
+        <div class="suggestion-item dinner">
+          <div class="suggestion-icon">🌙</div>
+          <div class="suggestion-content">
+            <h4>Dinner</h4>
+            <div class="suggested-time">${data.dinner}</div>
+          </div>
+        </div>
+      </div>
+      <p class="suggestion-note">${data.note}</p>
+    `;
+    
+    document.getElementById('mealTimeSuggestions').innerHTML = html;
+  } catch (error) {
+    document.getElementById('mealTimeSuggestions').innerHTML = 
+      '<div class="empty-state"><p class="muted">Unable to load suggestions</p></div>';
+  }
+}
+
+// Load all insights on page load
+document.addEventListener('DOMContentLoaded', () => {
+  loadNutritionScore();
+  loadBMIPrediction();
+  loadEatingPatterns();
+  loadAnomalyDetection();
+  loadMealTimeSuggestions();
+});
+</script>
+
+<style>
+.insights-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.page-header h2 {
+  font-size: 36px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.card {
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.card-header {
+  margin-bottom: 20px;
+}
+
+.card-header h3 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.card-header .muted {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px;
+  color: var(--muted);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(79, 157, 246, 0.2);
+  border-top-color: #4f9df6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Nutrition Score */
+.score-card {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(79, 157, 246, 0.08));
+}
+
+.score-display {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  margin-bottom: 32px;
+}
+
+.score-circle {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+
+.score-circle svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.score-circle.excellent { color: #22c55e; }
+.score-circle.good { color: #4f9df6; }
+.score-circle.fair { color: #f59e0b; }
+.score-circle.poor { color: #ef4444; }
+
+.score-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.score-number {
+  display: block;
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.score-label {
+  font-size: 20px;
+  color: var(--muted);
+}
+
+.score-details h4 {
+  font-size: 32px;
+  margin: 0 0 8px;
+}
+
+.score-breakdown {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+}
+
+.score-breakdown h4 {
+  margin: 0 0 16px;
+}
+
+.breakdown-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.breakdown-label {
+  flex: 0 0 160px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.breakdown-bar {
+  flex: 1;
+  height: 12px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.breakdown-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4f9df6, #22c55e);
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+
+.breakdown-value {
+  flex: 0 0 60px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Insights Grid */
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* Predictions */
+.prediction-summary {
+  margin-bottom: 24px;
+}
+
+.current-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  background: white;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.stat-value.trend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.trend.gaining { color: #ef4444; }
+.trend.losing { color: #22c55e; }
+.trend.stable { color: #6b7280; }
+
+.predictions-timeline {
+  margin-top: 24px;
+}
+
+.predictions-timeline h4 {
+  margin: 0 0 16px;
+}
+
+.prediction-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  border-left: 4px solid;
+}
+
+.prediction-row.underweight { border-color: #fbbf24; }
+.prediction-row.normal { border-color: #22c55e; }
+.prediction-row.overweight { border-color: #f97316; }
+.prediction-row.obese { border-color: #ef4444; }
+
+.pred-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 120px;
+}
+
+.pred-icon {
+  font-size: 20px;
+}
+
+.pred-days {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.pred-data {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+}
+
+.pred-weight {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.pred-bmi {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.prediction-note {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+/* Eating Patterns */
+.patterns-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.pattern-box {
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.pattern-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.pattern-content h4 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.pattern-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pattern-list li {
+  padding: 6px 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.pattern-list .count {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.consistency-meter {
+  height: 24px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.meter-fill {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.5s ease;
+}
+
+.meter-fill.high { background: #22c55e; }
+.meter-fill.medium { background: #f59e0b; }
+.meter-fill.low { background: #ef4444; }
+
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.comp-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: rgba(0,0,0,0.02);
+  border-radius: 8px;
+}
+
+.comp-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.comp-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.insight {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.big-stat {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 8px 0;
+}
+
+/* Anomaly Detection */
+.anomaly-summary {
+  margin-bottom: 24px;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  background: white;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.summary-value {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.summary-value.trend-increasing { color: #ef4444; }
+.summary-value.trend-decreasing { color: #22c55e; }
+.summary-value.trend-stable { color: #6b7280; }
+
+.no-anomalies {
+  text-align: center;
+  padding: 40px;
+}
+
+.success-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.anomalies-list h4 {
+  margin: 0 0 16px;
+}
+
+.anomaly-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  border-left: 4px solid;
+}
+
+.anomaly-item.high-cal {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.anomaly-item.low-cal {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.anomaly-icon {
+  font-size: 24px;
+}
+
+.anomaly-details {
+  flex: 1;
+}
+
+.anomaly-date {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.anomaly-type {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.anomaly-stats {
+  text-align: right;
+}
+
+.anomaly-calories {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.anomaly-deviation {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Meal Time Suggestions */
+.suggestions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.suggestion-item {
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  text-align: center;
+  border: 2px solid;
+}
+
+.suggestion-item.breakfast {
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.05);
+}
+
+.suggestion-item.lunch {
+  border-color: #f97316;
+  background: rgba(249, 115, 22, 0.05);
+}
+
+.suggestion-item.dinner {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.suggestion-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.suggestion-content h4 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.suggested-time {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.suggestion-note {
+  padding: 12px;
+  background: rgba(79, 157, 246, 0.1);
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+}
+
+@media (max-width: 1200px) {
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .score-display {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .current-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .patterns-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .summary-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .suggestions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .breakdown-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .breakdown-label {
+    flex: none;
+  }
+  
+  .breakdown-value {
+    text-align: left;
+  }
+}

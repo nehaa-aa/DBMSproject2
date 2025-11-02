@@ -4,7 +4,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from config import Config
 from decimal import Decimal
 import json
-
+from ml_features import (
+    predict_bmi_advanced, 
+    analyze_eating_patterns,
+    smart_food_search, 
+    suggest_meal_time, 
+    detect_calorie_anomalies,
+    calculate_nutrition_score
+)
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
 app.secret_key = Config.SECRET_KEY
 
@@ -403,50 +410,54 @@ def api_predict_bmi():
     if not logged_in():
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # Get historical data
-    history = query_db(
-        """SELECT weight_kg, bmi, updated_at 
-           FROM Biometrics 
-           WHERE user_id=%s 
-           ORDER BY updated_at ASC""",
-        (session['user_id'],)
-    )
+    # Use the advanced ML prediction
+    result = predict_bmi_advanced(session['user_id'], query_db)
     
-    if len(history) < 2:
-        return jsonify({'error': 'Insufficient data for prediction'})
-    
-    # Simple linear regression for weight prediction
-    from datetime import datetime, timedelta
-    
-    weights = [float(row['weight_kg']) for row in history]
-    dates = [row['updated_at'] for row in history]
-    
-    # Calculate average weight change per day
-    total_days = (dates[-1] - dates[0]).days
-    if total_days == 0:
-        return jsonify({'error': 'Need data over multiple days'})
-    
-    weight_change = (weights[-1] - weights[0]) / total_days
-    
-    # Predict 30, 60, 90 days ahead
-    current_weight = weights[-1]
-    current_height = float(history[-1]['bmi']) ** 0.5 * (current_weight ** 0.5) * 10  # Reverse BMI calculation
-    
-    predictions = []
-    for days_ahead in [30, 60, 90]:
-        predicted_weight = current_weight + (weight_change * days_ahead)
-        predicted_bmi = round(predicted_weight / ((current_height/100) ** 2), 1)
-        predictions.append({
-            'days': days_ahead,
-            'weight': round(predicted_weight, 1),
-            'bmi': predicted_bmi
+    # If ML prediction fails, fall back to simple linear regression
+    if 'error' in result:
+        # Your existing simple prediction code here
+        history = query_db(
+            """SELECT weight_kg, bmi, updated_at 
+               FROM Biometrics 
+               WHERE user_id=%s 
+               ORDER BY updated_at ASC""",
+            (session['user_id'],)
+        )
+        
+        if len(history) < 2:
+            return jsonify({'error': 'Insufficient data for prediction'})
+        
+        from datetime import datetime, timedelta
+        
+        weights = [float(row['weight_kg']) for row in history]
+        dates = [row['updated_at'] for row in history]
+        
+        total_days = (dates[-1] - dates[0]).days
+        if total_days == 0:
+            return jsonify({'error': 'Need data over multiple days'})
+        
+        weight_change = (weights[-1] - weights[0]) / total_days
+        
+        current_weight = weights[-1]
+        current_height = float(history[-1]['bmi']) ** 0.5 * (current_weight ** 0.5) * 10
+        
+        predictions = []
+        for days_ahead in [30, 60, 90]:
+            predicted_weight = current_weight + (weight_change * days_ahead)
+            predicted_bmi = round(predicted_weight / ((current_height/100) ** 2), 1)
+            predictions.append({
+                'days': days_ahead,
+                'weight': round(predicted_weight, 1),
+                'bmi': predicted_bmi
+            })
+        
+        return jsonify({
+            'current_weight': round(current_weight, 1),
+            'trend': 'gaining' if weight_change > 0 else 'losing' if weight_change < 0 else 'stable',
+            'predictions': predictions
         })
     
-    return jsonify({
-        'current_weight': round(current_weight, 1),
-        'trend': 'gaining' if weight_change > 0 else 'losing' if weight_change < 0 else 'stable',
-        'predictions': predictions
-    })
+    return jsonify(result)
 
 # ---- Delete Meal ----
 @app.post('/meal/delete/<int:meal_id>')
@@ -460,6 +471,81 @@ def meal_delete(meal_id):
     )
     return redirect(url_for('reports'))
 
+# ---- ML Feature: Advanced BMI Prediction ----
+@app.get('/api/ml-predict-bmi')
+def ml_predict_bmi():
+    if not logged_in():
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    result = predict_bmi_advanced(session['user_id'], query_db)
+    return jsonify(result)
+
+
+# ---- ML Feature: Eating Pattern Analysis ----
+@app.get('/api/ml-eating-patterns')
+def ml_eating_patterns():
+    if not logged_in():
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    result = analyze_eating_patterns(session['user_id'], query_db)
+    return jsonify(result)
+
+
+# ---- ML Feature: Smart Food Search ----
+@app.get('/api/ml-smart-search')
+def ml_smart_search():
+    if not logged_in():
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    query = request.args.get('q', '')
+    
+    if not query:
+        return jsonify([])
+    
+    foods = query_db("SELECT * FROM Food_Items")
+    results = smart_food_search(query, foods)
+    
+    return jsonify(results)
+
+
+# ---- ML Feature: Meal Time Suggestions ----
+@app.get('/api/ml-meal-time-suggestion')
+def ml_meal_time():
+    if not logged_in():
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    result = suggest_meal_time(session['user_id'], query_db)
+    return jsonify(result)
+
+
+# ---- ML Feature: Calorie Anomaly Detection ----
+@app.get('/api/ml-anomaly-detection')
+def ml_anomalies():
+    if not logged_in():
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    result = detect_calorie_anomalies(session['user_id'], query_db)
+    return jsonify(result)
+
+
+# ---- ML Feature: Nutrition Score ----
+@app.get('/api/ml-nutrition-score')
+def ml_nutrition_score():
+    if not logged_in():
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    result = calculate_nutrition_score(session['user_id'], query_db)
+    return jsonify(result)
+
+
+# ---- Enhanced Dashboard with ML Insights ----
+@app.get('/ml-insights')
+def ml_insights_page():
+    """New page showing all ML-powered insights"""
+    if not logged_in():
+        return redirect(url_for('login_page'))
+    
+    return render_template('ml_insights.html', user=session.get('user_name'))
 # -------------------- Run --------------------
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
