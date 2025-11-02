@@ -1,5 +1,5 @@
 """
-Smart Nutrition ML Features
+Smart Nutrition ML Features - FIXED VERSION
 Integrated machine learning capabilities for the Nutrimo app
 Requirements: scikit-learn, pandas, numpy
 """
@@ -35,7 +35,7 @@ def convert_to_native_types(obj):
     return obj
 
 # ====================================================================
-# 1. ADVANCED BMI PREDICTION
+# 1. ADVANCED BMI PREDICTION (FIXED)
 # ====================================================================
 
 def predict_bmi_advanced(user_id, db_query_func):
@@ -66,19 +66,11 @@ def predict_bmi_advanced(user_id, db_query_func):
             df['updated_at'] = pd.to_datetime(df['updated_at'])
         
         df['days'] = (df['updated_at'] - df['updated_at'].iloc[0]).dt.days
-    except Exception as e:
-        print(f"Error in BMI prediction: {e}")
-        return {'error': f'Error processing biometric data: {str(e)}'}
-        df['days'] = (df['updated_at'] - df['updated_at'].iloc[0]).dt.days
-    except Exception as e:
-        print(f"Error in BMI prediction: {e}")
-        return {'error': f'Error processing biometric data: {str(e)}'}
-    
-    # Check if all entries are on the same day
-    if df['days'].max() == 0:
-        return {'error': 'Need entries from different days for prediction'}
-    
-    try:
+        
+        # Check if all entries are on the same day
+        if df['days'].max() == 0:
+            return {'error': 'Need entries from different days for prediction'}
+        
         X = df[['days']].values
         y = df['weight_kg'].values
         
@@ -126,12 +118,12 @@ def predict_bmi_advanced(user_id, db_query_func):
         # Convert all numpy types to native Python types
         return convert_to_native_types(result)
     except Exception as e:
-        print(f"Error in BMI prediction calculation: {e}")
+        print(f"Error in BMI prediction: {e}")
         return {'error': f'Error calculating predictions: {str(e)}'}
 
 
 # ====================================================================
-# 2. EATING PATTERN ANALYSIS
+# 2. EATING PATTERN ANALYSIS (FIXED)
 # ====================================================================
 
 def analyze_eating_patterns(user_id, db_query_func):
@@ -142,86 +134,104 @@ def analyze_eating_patterns(user_id, db_query_func):
     - Calorie consistency
     - Weekend vs weekday behavior
     """
-    meals = db_query_func(
-        """SELECT ml.eaten_at, ml.calories, fi.name,
-                  HOUR(ml.eaten_at) as hour,
-                  DAYOFWEEK(ml.eaten_at) as day_of_week
-           FROM Meal_Logs ml
-           JOIN Food_Items fi ON fi.id = ml.food_id
-           WHERE ml.user_id=%s
-           AND ml.eaten_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)""",
-        (user_id,)
-    )
-    
-    if not meals or len(meals) < 5:
-        return {'error': 'Need at least 5 meal logs for pattern analysis'}
-    
-    # Convert Decimals to floats
-    meals = convert_decimals(meals)
-    
-    df = pd.DataFrame(meals)
-    
-    # Pattern 1: Peak eating hours
-    hour_dist = df.groupby('hour')['calories'].sum().sort_values(ascending=False)
-    peak_hours = [int(h) for h in hour_dist.head(3).index.tolist()]
-    
-    # Convert to readable format
-    def hour_to_period(h):
-        if 5 <= h < 12:
-            return f"{h}:00 (Morning)"
-        elif 12 <= h < 17:
-            return f"{h}:00 (Afternoon)"
-        elif 17 <= h < 21:
-            return f"{h}:00 (Evening)"
+    try:
+        meals = db_query_func(
+            """SELECT ml.eaten_at, ml.calories, fi.name,
+                      HOUR(ml.eaten_at) as hour,
+                      DAYOFWEEK(ml.eaten_at) as day_of_week
+               FROM Meal_Logs ml
+               JOIN Food_Items fi ON fi.id = ml.food_id
+               WHERE ml.user_id=%s
+               AND ml.eaten_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)""",
+            (user_id,)
+        )
+        
+        if not meals or len(meals) < 5:
+            return {'error': 'Need at least 5 meal logs for pattern analysis'}
+        
+        # Convert Decimals to floats
+        meals = convert_decimals(meals)
+        
+        df = pd.DataFrame(meals)
+        
+        # Ensure eaten_at is datetime
+        if not pd.api.types.is_datetime64_any_dtype(df['eaten_at']):
+            df['eaten_at'] = pd.to_datetime(df['eaten_at'])
+        
+        # Pattern 1: Peak eating hours
+        hour_dist = df.groupby('hour')['calories'].sum().sort_values(ascending=False)
+        peak_hours = [int(h) for h in hour_dist.head(3).index.tolist()]
+        
+        # Convert to readable format
+        def hour_to_period(h):
+            if 5 <= h < 12:
+                return f"{h}:00 (Morning)"
+            elif 12 <= h < 17:
+                return f"{h}:00 (Afternoon)"
+            elif 17 <= h < 21:
+                return f"{h}:00 (Evening)"
+            else:
+                return f"{h}:00 (Night)"
+        
+        peak_hours_formatted = [hour_to_period(h) for h in peak_hours]
+        
+        # Pattern 2: Top 5 favorite foods
+        food_freq = df['name'].value_counts().head(5)
+        favorite_foods = {food: int(count) for food, count in food_freq.items()}
+        
+        # Pattern 3: Calorie consistency
+        daily_cals = df.groupby(df['eaten_at'].dt.date)['calories'].sum()
+        
+        # Ensure we have valid data
+        if len(daily_cals) == 0:
+            return {'error': 'Insufficient calorie data for analysis'}
+        
+        avg_daily = float(daily_cals.mean())
+        std_daily = float(daily_cals.std()) if len(daily_cals) > 1 else 0.0
+        
+        # Consistency score (lower std = higher consistency)
+        if avg_daily > 0:
+            consistency_score = round(max(0, 100 - (std_daily / avg_daily * 100)), 0)
         else:
-            return f"{h}:00 (Night)"
-    
-    peak_hours_formatted = [hour_to_period(h) for h in peak_hours]
-    
-    # Pattern 2: Top 5 favorite foods
-    food_freq = df['name'].value_counts().head(5)
-    favorite_foods = {food: int(count) for food, count in food_freq.items()}
-    
-    # Pattern 3: Calorie consistency
-    daily_cals = df.groupby(df['eaten_at'].dt.date)['calories'].sum()
-    avg_daily = float(daily_cals.mean())
-    std_daily = float(daily_cals.std())
-    
-    # Consistency score (lower std = higher consistency)
-    consistency_score = round(max(0, 100 - (std_daily / avg_daily * 100)), 0)
-    consistency = 'high' if consistency_score > 70 else 'medium' if consistency_score > 40 else 'low'
-    
-    # Pattern 4: Weekend vs Weekday
-    df['is_weekend'] = df['day_of_week'].isin([1, 7])  # Sunday=1, Saturday=7
-    
-    weekend_days = df[df['is_weekend']]['eaten_at'].dt.date.nunique()
-    weekday_days = df[~df['is_weekend']]['eaten_at'].dt.date.nunique()
-    
-    weekend_avg = float(df[df['is_weekend']]['calories'].sum() / max(weekend_days, 1))
-    weekday_avg = float(df[~df['is_weekend']]['calories'].sum() / max(weekday_days, 1))
-    
-    # Pattern 5: Meal frequency
-    meals_per_day = len(df) / df['eaten_at'].dt.date.nunique()
-    
-    result = {
-        'success': True,
-        'peak_eating_hours': peak_hours_formatted,
-        'favorite_foods': favorite_foods,
-        'consistency': consistency,
-        'consistency_score': int(consistency_score),
-        'avg_daily_calories': round(avg_daily, 0),
-        'weekend_avg_calories': round(weekend_avg, 0),
-        'weekday_avg_calories': round(weekday_avg, 0),
-        'eats_more_on': 'weekends' if weekend_avg > weekday_avg else 'weekdays',
-        'meals_per_day': round(meals_per_day, 1),
-        'total_meals_analyzed': len(df)
-    }
-    
-    return convert_to_native_types(result)
+            consistency_score = 0
+            
+        consistency = 'high' if consistency_score > 70 else 'medium' if consistency_score > 40 else 'low'
+        
+        # Pattern 4: Weekend vs Weekday
+        df['is_weekend'] = df['day_of_week'].isin([1, 7])  # Sunday=1, Saturday=7
+        
+        weekend_days = df[df['is_weekend']]['eaten_at'].dt.date.nunique()
+        weekday_days = df[~df['is_weekend']]['eaten_at'].dt.date.nunique()
+        
+        weekend_avg = float(df[df['is_weekend']]['calories'].sum() / max(weekend_days, 1))
+        weekday_avg = float(df[~df['is_weekend']]['calories'].sum() / max(weekday_days, 1))
+        
+        # Pattern 5: Meal frequency
+        total_days = df['eaten_at'].dt.date.nunique()
+        meals_per_day = len(df) / max(total_days, 1)
+        
+        result = {
+            'success': True,
+            'peak_eating_hours': peak_hours_formatted,
+            'favorite_foods': favorite_foods,
+            'consistency': consistency,
+            'consistency_score': int(consistency_score),
+            'avg_daily_calories': round(avg_daily, 0),
+            'weekend_avg_calories': round(weekend_avg, 0),
+            'weekday_avg_calories': round(weekday_avg, 0),
+            'eats_more_on': 'weekends' if weekend_avg > weekday_avg else 'weekdays',
+            'meals_per_day': round(meals_per_day, 1),
+            'total_meals_analyzed': len(df)
+        }
+        
+        return convert_to_native_types(result)
+    except Exception as e:
+        print(f"Error in eating pattern analysis: {e}")
+        return {'error': f'Error analyzing patterns: {str(e)}'}
 
 
 # ====================================================================
-# 3. SMART FOOD SEARCH (Fuzzy Matching)
+# 3. SMART FOOD SEARCH (No changes needed)
 # ====================================================================
 
 def smart_food_search(query, food_items):
@@ -284,7 +294,7 @@ def smart_food_search(query, food_items):
 
 
 # ====================================================================
-# 4. MEAL TIME SUGGESTIONS
+# 4. MEAL TIME SUGGESTIONS (No changes needed)
 # ====================================================================
 
 def suggest_meal_time(user_id, db_query_func):
@@ -333,7 +343,7 @@ def suggest_meal_time(user_id, db_query_func):
 
 
 # ====================================================================
-# 5. CALORIE ANOMALY DETECTION
+# 5. CALORIE ANOMALY DETECTION (No changes needed)
 # ====================================================================
 
 def detect_calorie_anomalies(user_id, db_query_func):
@@ -396,7 +406,7 @@ def detect_calorie_anomalies(user_id, db_query_func):
 
 
 # ====================================================================
-# 6. NUTRITION SCORE CALCULATION
+# 6. NUTRITION SCORE CALCULATION (FIXED)
 # ====================================================================
 
 def calculate_nutrition_score(user_id, db_query_func):
@@ -404,94 +414,122 @@ def calculate_nutrition_score(user_id, db_query_func):
     Calculate overall nutrition health score (0-100)
     Based on: calorie consistency, macro balance, meal frequency
     """
-    # Get last 14 days of data
-    meals = db_query_func(
-        """SELECT ml.eaten_at, ml.calories, 
-                  (fi.protein_g/100.0) * ml.quantity_g as protein,
-                  (fi.carbs_g/100.0) * ml.quantity_g as carbs,
-                  (fi.fat_g/100.0) * ml.quantity_g as fat
-           FROM Meal_Logs ml
-           JOIN Food_Items fi ON fi.id = ml.food_id
-           WHERE ml.user_id=%s
-           AND ml.eaten_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)""",
-        (user_id,)
-    )
-    
-    if not meals or len(meals) < 5:
-        return {'error': 'Need at least 5 meals for nutrition score'}
-    
-    # Convert Decimals to floats
-    meals = convert_decimals(meals)
-    
-    df = pd.DataFrame(meals)
-    
-    score = 0
-    breakdown = {}
-    
-    # 1. Calorie Consistency (30 points)
-    daily_cals = df.groupby(df['eaten_at'].dt.date)['calories'].sum()
-    mean_daily = float(daily_cals.mean())
-    std_daily = float(daily_cals.std())
-    
-    consistency = max(0, 30 - (std_daily / mean_daily * 15))
-    score += consistency
-    breakdown['consistency'] = round(consistency, 1)
-    
-    # 2. Macro Balance (30 points)
-    total_protein = float(df['protein'].sum())
-    total_carbs = float(df['carbs'].sum())
-    total_fat = float(df['fat'].sum())
-    total = total_protein + total_carbs + total_fat
-    
-    if total > 0:
-        protein_pct = (total_protein / total) * 100
-        carbs_pct = (total_carbs / total) * 100
-        fat_pct = (total_fat / total) * 100
+    try:
+        # Get last 14 days of data
+        meals = db_query_func(
+            """SELECT ml.eaten_at, ml.calories, 
+                      (fi.protein_g/100.0) * ml.quantity_g as protein,
+                      (fi.carbs_g/100.0) * ml.quantity_g as carbs,
+                      (fi.fat_g/100.0) * ml.quantity_g as fat
+               FROM Meal_Logs ml
+               JOIN Food_Items fi ON fi.id = ml.food_id
+               WHERE ml.user_id=%s
+               AND ml.eaten_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)""",
+            (user_id,)
+        )
         
-        # Ideal: 25-35% protein, 45-55% carbs, 20-30% fat
-        protein_score = max(0, 10 - abs(protein_pct - 30))
-        carbs_score = max(0, 10 - abs(carbs_pct - 50) / 2)
-        fat_score = max(0, 10 - abs(fat_pct - 25))
+        if not meals or len(meals) < 5:
+            return {'error': 'Need at least 5 meals for nutrition score'}
         
-        macro_score = protein_score + carbs_score + fat_score
-        score += macro_score
-        breakdown['macro_balance'] = round(macro_score, 1)
-    
-    # 3. Meal Frequency (20 points)
-    days = df['eaten_at'].dt.date.nunique()
-    meals_per_day = len(df) / days
-    # Ideal: 3-5 meals per day
-    freq_score = 20 if 3 <= meals_per_day <= 5 else 20 - abs(meals_per_day - 4) * 3
-    freq_score = max(0, min(20, freq_score))
-    score += freq_score
-    breakdown['meal_frequency'] = round(freq_score, 1)
-    
-    # 4. Regular Eating Pattern (20 points)
-    # Check if eating at consistent times
-    df['hour'] = df['eaten_at'].dt.hour
-    hour_std = float(df['hour'].std())
-    pattern_score = max(0, 20 - hour_std)
-    score += pattern_score
-    breakdown['eating_pattern'] = round(pattern_score, 1)
-    
-    total_score = min(100, round(score, 0))
-    
-    # Rating
-    if total_score >= 80:
-        rating = 'Excellent'
-    elif total_score >= 60:
-        rating = 'Good'
-    elif total_score >= 40:
-        rating = 'Fair'
-    else:
-        rating = 'Needs Improvement'
-    
-    result = {
-        'success': True,
-        'total_score': int(total_score),
-        'rating': rating,
-        'breakdown': breakdown,
-        'days_analyzed': days
-    }
-    
-    return convert_to_native_types(result)
+        # Convert Decimals to floats
+        meals = convert_decimals(meals)
+        
+        df = pd.DataFrame(meals)
+        
+        # Ensure eaten_at is datetime
+        if not pd.api.types.is_datetime64_any_dtype(df['eaten_at']):
+            df['eaten_at'] = pd.to_datetime(df['eaten_at'])
+        
+        score = 0
+        breakdown = {}
+        
+        # 1. Calorie Consistency (30 points)
+        daily_cals = df.groupby(df['eaten_at'].dt.date)['calories'].sum()
+        
+        if len(daily_cals) > 1:
+            mean_daily = float(daily_cals.mean())
+            std_daily = float(daily_cals.std())
+            
+            if mean_daily > 0:
+                consistency = max(0, min(30, 30 - (std_daily / mean_daily * 15)))
+            else:
+                consistency = 0
+        else:
+            consistency = 15  # Give partial credit for single day
+        
+        score += consistency
+        breakdown['consistency'] = round(consistency, 1)
+        
+        # 2. Macro Balance (30 points)
+        total_protein = float(df['protein'].sum())
+        total_carbs = float(df['carbs'].sum())
+        total_fat = float(df['fat'].sum())
+        total = total_protein + total_carbs + total_fat
+        
+        if total > 0:
+            protein_pct = (total_protein / total) * 100
+            carbs_pct = (total_carbs / total) * 100
+            fat_pct = (total_fat / total) * 100
+            
+            # Ideal: 25-35% protein, 45-55% carbs, 20-30% fat
+            protein_score = max(0, 10 - abs(protein_pct - 30))
+            carbs_score = max(0, 10 - abs(carbs_pct - 50) / 2)
+            fat_score = max(0, 10 - abs(fat_pct - 25))
+            
+            macro_score = min(30, protein_score + carbs_score + fat_score)
+            score += macro_score
+            breakdown['macro_balance'] = round(macro_score, 1)
+        else:
+            breakdown['macro_balance'] = 0.0
+        
+        # 3. Meal Frequency (20 points)
+        days = df['eaten_at'].dt.date.nunique()
+        meals_per_day = len(df) / max(days, 1)
+        
+        # Ideal: 3-5 meals per day
+        if 3 <= meals_per_day <= 5:
+            freq_score = 20
+        else:
+            freq_score = max(0, 20 - abs(meals_per_day - 4) * 3)
+        
+        freq_score = min(20, max(0, freq_score))
+        score += freq_score
+        breakdown['meal_frequency'] = round(freq_score, 1)
+        
+        # 4. Regular Eating Pattern (20 points)
+        # Check if eating at consistent times
+        df['hour'] = df['eaten_at'].dt.hour
+        
+        if len(df['hour']) > 1:
+            hour_std = float(df['hour'].std())
+            pattern_score = max(0, min(20, 20 - hour_std))
+        else:
+            pattern_score = 10  # Partial credit for single meal
+        
+        score += pattern_score
+        breakdown['eating_pattern'] = round(pattern_score, 1)
+        
+        total_score = min(100, max(0, round(score, 0)))
+        
+        # Rating
+        if total_score >= 80:
+            rating = 'Excellent'
+        elif total_score >= 60:
+            rating = 'Good'
+        elif total_score >= 40:
+            rating = 'Fair'
+        else:
+            rating = 'Needs Improvement'
+        
+        result = {
+            'success': True,
+            'total_score': int(total_score),
+            'rating': rating,
+            'breakdown': breakdown,
+            'days_analyzed': days
+        }
+        
+        return convert_to_native_types(result)
+    except Exception as e:
+        print(f"Error in nutrition score calculation: {e}")
+        return {'error': f'Error calculating nutrition score: {str(e)}'}

@@ -112,40 +112,7 @@
     <!-- Quick Reference -->
     <div class="card reference-card">
       <h3>📏 Serving Size Reference</h3>
-      <div class="reference-list">
-        <div class="reference-item">
-          <strong>Rice (cooked)</strong>
-          <span>1 cup ≈ 200g</span>
-        </div>
-        <div class="reference-item">
-          <strong>Roti/Chapati</strong>
-          <span>1 piece ≈ 40-50g</span>
-        </div>
-        <div class="reference-item">
-          <strong>Dal (cooked)</strong>
-          <span>1 cup ≈ 200g</span>
-        </div>
-        <div class="reference-item">
-          <strong>Paneer</strong>
-          <span>1 cube ≈ 30g</span>
-        </div>
-        <div class="reference-item">
-          <strong>Banana</strong>
-          <span>1 medium ≈ 120g</span>
-        </div>
-        <div class="reference-item">
-          <strong>Apple</strong>
-          <span>1 medium ≈ 180g</span>
-        </div>
-        <div class="reference-item">
-          <strong>Egg</strong>
-          <span>1 large ≈ 50g</span>
-        </div>
-        <div class="reference-item">
-          <strong>Chicken breast</strong>
-          <span>1 piece ≈ 150g</span>
-        </div>
-      </div>
+      <div class="reference-list" id="referenceList"></div>
     </div>
   </div>
 
@@ -277,6 +244,68 @@ window.selectFood = function(foodId, foodName) {
   resultsDiv.innerHTML = '';
   updateNutritionInfo();
 };
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const refList = document.getElementById("referenceList");
+
+  // Base data (sample from Kaggle Indian Food Nutrition dataset)
+  const baseItems = [
+    { name: "Rice (Cooked)", size: "1 cup ≈ 200g" },
+    { name: "Dal (Cooked)", size: "1 cup ≈ 200g" },
+    { name: "Chapati/Roti", size: "1 piece ≈ 45g" },
+    { name: "Paneer", size: "1 cube ≈ 30g" },
+    { name: "Dosa", size: "1 piece ≈ 100g" },
+    { name: "Idli", size: "1 piece ≈ 50g" },
+    { name: "Sambar", size: "1 bowl ≈ 150g" },
+    { name: "Upma", size: "1 cup ≈ 180g" },
+    { name: "Poha", size: "1 cup ≈ 150g" },
+    { name: "Biryani", size: "1 plate ≈ 300g" },
+    { name: "Aloo Paratha", size: "1 piece ≈ 120g" },
+    { name: "Curd", size: "1 cup ≈ 200g" },
+    { name: "Vegetable Curry", size: "1 bowl ≈ 200g" },
+    { name: "Fish Curry", size: "1 bowl ≈ 180g" },
+    { name: "Chicken Curry", size: "1 bowl ≈ 200g" },
+    { name: "Egg Curry", size: "1 bowl ≈ 180g" },
+    { name: "Rajma", size: "1 cup ≈ 200g" },
+    { name: "Chole", size: "1 cup ≈ 200g" },
+    { name: "Pulao", size: "1 cup ≈ 180g" },
+    { name: "Vegetable Sandwich", size: "1 piece ≈ 150g" }
+  ];
+
+  // Make the list 5× longer
+  let items = [];
+  for (let i = 0; i < 5; i++) {
+    items = items.concat(baseItems.map((item, idx) => ({
+      name: item.name + (i > 0 ? ` (${i+1})` : ""),
+      size: item.size
+    })));
+  }
+
+  let loaded = 0;
+  const batchSize = 10;
+
+  // Function to load more items
+  function loadMore() {
+    const nextBatch = items.slice(loaded, loaded + batchSize);
+    nextBatch.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "reference-item";
+      div.innerHTML = `<strong>${item.name}</strong><span>${item.size}</span>`;
+      refList.appendChild(div);
+    });
+    loaded += batchSize;
+  }
+
+  // Initial load
+  loadMore();
+
+  // Infinite scroll
+  refList.addEventListener("scroll", () => {
+    if (refList.scrollTop + refList.clientHeight >= refList.scrollHeight - 10) {
+      loadMore();
+    }
+  });
+});
 </script>
 
 <style>
