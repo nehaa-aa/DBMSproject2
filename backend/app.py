@@ -139,7 +139,7 @@ def dashboard():
                          bio=bio,
                          today_calories=today_calories)
 
-# ---- Profile ----
+# ---- Profile (Merged with Biometrics) ----
 @app.get('/profile')
 def profile_page():
     if not logged_in():
@@ -172,22 +172,8 @@ def profile_update():
     
     return redirect(url_for('profile_page'))
 
-# ---- Biometrics ----
-@app.get('/biometrics')
-def biometrics_page():
-    if not logged_in():
-        return redirect(url_for('login_page'))
-    
-    current = query_db(
-        "SELECT * FROM Biometrics WHERE user_id=%s ORDER BY updated_at DESC LIMIT 1",
-        (session['user_id'],),
-        fetchone=True
-    )
-    
-    return render_template('biometrics.html', current=current)
-
-@app.post('/biometrics')
-def biometrics_save():
+@app.post('/profile/biometrics')
+def profile_biometrics_update():
     if not logged_in():
         return redirect(url_for('login_page'))
 
@@ -200,22 +186,62 @@ def biometrics_save():
             target_weight = float(target_weight)
         activity_level = request.form.get('activity_level', 'moderate')
 
-        # Always insert new record for history tracking
+        # ✅ Calculate BMI manually
+        bmi = round(w / ((h / 100) ** 2), 2)
+
+        # ✅ Insert with BMI and explicit timestamp
         query_db(
-            """INSERT INTO Biometrics (user_id, height_cm, weight_kg, goal, target_weight_kg, activity_level) 
-               VALUES (%s, %s, %s, %s, %s, %s)""",
-            (session['user_id'], h, w, goal, target_weight, activity_level),
+            """INSERT INTO Biometrics 
+               (user_id, height_cm, weight_kg, bmi, goal, target_weight_kg, activity_level, updated_at)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())""",
+            (session['user_id'], h, w, bmi, goal, target_weight, activity_level),
             commit=True
         )
 
-        return redirect(url_for('dashboard'))
+        print("✅ Biometrics saved successfully via /profile/biometrics")
+        return redirect(url_for('profile_page'))
+
     except Exception as e:
-        current = query_db(
-            "SELECT * FROM Biometrics WHERE user_id=%s ORDER BY updated_at DESC LIMIT 1",
-            (session['user_id'],),
-            fetchone=True
-        )
-        return render_template('biometrics.html', current=current, error=f"Error saving biometrics: {str(e)}")
+        print(f"❌ Error saving biometrics: {e}")
+        return redirect(url_for('profile_page'))
+
+
+# ---- Biometrics (Now consistent with profile/biometrics) ----
+@app.route('/biometrics', methods=['GET', 'POST'])
+def biometrics_page():
+    if not logged_in():
+        return redirect(url_for('login_page'))
+    
+    if request.method == 'POST':
+        try:
+            h = float(request.form['height_cm'])
+            w = float(request.form['weight_kg'])
+            goal = request.form.get('goal', 'maintain')
+            target_weight = request.form.get('target_weight_kg') or None
+            if target_weight:
+                target_weight = float(target_weight)
+            activity_level = request.form.get('activity_level', 'moderate')
+
+            # ✅ Calculate BMI manually (same as /profile/biometrics)
+            bmi = round(w / ((h / 100) ** 2), 2)
+
+            # ✅ Insert with BMI and explicit timestamp
+            query_db(
+                """INSERT INTO Biometrics 
+                   (user_id, height_cm, weight_kg, bmi, goal, target_weight_kg, activity_level, updated_at)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())""",
+                (session['user_id'], h, w, bmi, goal, target_weight, activity_level),
+                commit=True
+            )
+
+            print("✅ Biometrics saved successfully via /biometrics endpoint")
+            return redirect(url_for('profile_page'))
+        except Exception as e:
+            print(f"❌ Error saving biometrics: {e}")
+            return redirect(url_for('profile_page'))
+    
+    # GET request - redirect to profile
+    return redirect(url_for('profile_page'))
 
 # ---- Meal Logging ----
 @app.get('/meal')
