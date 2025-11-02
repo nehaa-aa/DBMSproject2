@@ -2,282 +2,330 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>{% block title %}Smart Nutrition & BMI{% endblock %}</title>
+  <title id="nutrimo">{% block title %}Nutrimo - Smart Nutrition & BMI{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
-    /* Enhanced Navigation Styles */
-    .nav {
+    /* ============================================
+       PRODUCTION-GRADE BASE TEMPLATE
+       Modern Sidebar Navigation with Glass UI
+    ============================================ */
+    
+    #nutrimo{
+      z-index: 1000;
+    }
+    :root {
+      --bg: #f7fafc;
+      --surface: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #4f9df6;
+      --primary-600: #3182ce;
+      --accent: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --border: #e5e7eb;
+      --radius: 12px;
+      --shadow: 0 6px 24px rgba(0,0,0,0.06);
+      --sidebar-width: 280px;
+      --topbar-height: 64px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,250,252,0.95));
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 1000;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-shadow: 2px 0 30px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-header {
+      padding: 24px 20px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(79,157,246,0.08), rgba(34,197,94,0.08));
       position: sticky;
       top: 0;
-      z-index: 100;
+      z-index: 10;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .sidebar-logo-text {
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .sidebar-profile {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      background: white;
+    }
+
+    .profile-compact {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      padding: 12px;
+      border-radius: 12px;
+      transition: var(--transition);
+    }
+
+    .profile-avatar-small {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4f9df6, #3182ce);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .sidebar-quick-stats {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(247,250,252,0.5);
+    }
+
+    .quick-stats-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .quick-stat-item {
+      background: white;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+
+    .quick-stat-value.bmi {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .sidebar-nav {
+      padding: 12px 0;
+      flex: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 20px;
+      color: var(--text);
+      text-decoration: none;
+      transition: var(--transition);
+      margin: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .nav-item.active {
+      background: rgba(79,157,246,0.12);
+      color: var(--primary);
+      box-shadow: inset 3px 0 0 var(--primary);
+    }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: rgba(255,255,255,0.8);
+    }
+
+    .logout-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px;
+      background: white;
+      color: var(--danger);
+      border: 2px solid rgba(239,68,68,0.2);
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      background: rgba(255,255,255,0.98);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 24px;
-      background: rgba(255,255,255,.92);
-      backdrop-filter: saturate(140%) blur(12px);
-      border-bottom: 1px solid var(--border);
-      box-shadow: 0 2px 20px rgba(0,0,0,0.06);
-      margin-bottom: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    
-    .brand {
-      font-weight: 800;
-      font-size: 20px;
-      color: var(--text);
-      text-decoration: none;
-      letter-spacing: 0.3px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .brand-icon {
+
+    .page-title {
       font-size: 24px;
-    }
-    
-    .nav-links {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    
-    .nav-links a {
-      color: var(--text);
-      text-decoration: none;
-      padding: 8px 14px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      position: relative;
-      transition: all 0.2s ease;
-    }
-    
-    .nav-links a:hover {
-      background: rgba(79,157,246,0.08);
-      color: var(--primary);
-    }
-    
-    .nav-links a.active {
-      background: rgba(79,157,246,0.12);
-      color: var(--primary);
-      font-weight: 600;
-    }
-    
-    .nav-links .nav-button {
-      padding: 8px 16px;
-      background: linear-gradient(135deg, var(--primary), var(--primary-600));
-      color: white;
-      border-radius: 20px;
-      font-weight: 600;
-      box-shadow: 0 2px 8px rgba(79,157,246,0.3);
-    }
-    
-    .nav-links .nav-button:hover {
-      background: linear-gradient(135deg, var(--primary-600), var(--primary));
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(79,157,246,0.4);
-    }
-    
-    .nav-links .logout-button {
-      padding: 8px 16px;
-      background: rgba(239,68,68,0.1);
-      color: #dc2626;
-      border-radius: 20px;
-      font-weight: 600;
-    }
-    
-    .nav-links .logout-button:hover {
-      background: rgba(239,68,68,0.15);
-    }
-    
-    /* Mobile Menu */
-    .mobile-menu-toggle {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      padding: 8px;
-    }
-    
-    @media (max-width: 768px) {
-      .nav-links {
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        flex-direction: column;
-        padding: 16px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        border-top: 1px solid var(--border);
-      }
-      
-      .nav-links.mobile-open {
-        display: flex;
-      }
-      
-      .nav-links a {
-        width: 100%;
-        text-align: left;
-        padding: 12px 16px;
-      }
-      
-      .mobile-menu-toggle {
-        display: block;
-      }
-      
-      .nav {
-        flex-wrap: wrap;
-      }
-    }
-    
-    /* Page Wrapper */
-    .page-wrapper {
-      min-height: calc(100vh - 200px);
-    }
-    
-    /* Footer */
-    .footer {
-      margin-top: 60px;
-      padding: 32px 0;
-      border-top: 1px solid var(--border);
-      background: rgba(247,250,252,0.5);
-    }
-    
-    .footer-content {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 0 18px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 24px;
-    }
-    
-    .footer-section h4 {
-      margin: 0 0 12px;
-      font-size: 14px;
       font-weight: 700;
       color: var(--text);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
-    
-    .footer-section ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+
+    .content-container {
+      padding: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
     }
-    
-    .footer-section li {
-      margin-bottom: 8px;
-    }
-    
-    .footer-section a {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 14px;
-      transition: color 0.2s ease;
-    }
-    
-    .footer-section a:hover {
-      color: var(--primary);
-    }
-    
-    .footer-bottom {
-      max-width: 1000px;
-      margin: 24px auto 0;
-      padding: 0 18px;
+
+    .footer {
+      margin-top: auto;
+      padding: 32px;
+      border-top: 1px solid var(--border);
+      background: rgba(247,250,252,0.5);
       text-align: center;
       color: var(--muted);
       font-size: 13px;
-      border-top: 1px solid var(--border);
-      padding-top: 20px;
     }
+
   </style>
 </head>
 <body>
   {% if not hide_nav %}
-  <header class="nav">
-    <a class="brand" href="/">
-      <span class="brand-icon">🥗</span>
-      Smart Nutrition
-    </a>
-    
-    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
-    
-    <nav class="nav-links" id="navLinks">
-      <a href="/dashboard" {% if request.path == '/dashboard' %}class="active"{% endif %}>Dashboard</a>
-      <a href="/profile" {% if request.path == '/profile' or request.path == '/biometrics' %}class="active"{% endif %}>Profile & Biometrics</a>
-      <a href="/meal" {% if request.path == '/meal' %}class="active"{% endif %}>Log Meal</a>
-      <a href="/progress" {% if request.path == '/progress' %}class="active"{% endif %}>Progress</a>
-      <a href="/ml-insights" {% if request.path == '/ml-insights' %}class="active"{% endif %}>AI Insights</a>
-      <a href="/reports" {% if request.path == '/reports' %}class="active"{% endif %}>Reports</a>
-      <a href="/logout" class="logout-button">Logout</a>
-    </nav>
-  </header>
-  {% endif %}
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="sidebar-logo">
+          <span class="sidebar-logo-icon">🥗</span>
+          <span class="sidebar-logo-text">Nutrimo</span>
+        </a>
+      </div>
 
-  <main class="container page-wrapper">
-    {% block content %}{% endblock %}
+      <div class="sidebar-profile">
+        <a href="/profile" class="profile-compact">
+          <div class="profile-avatar-small">
+            {{ session.get('user_name', 'U')[0].upper() }}
+          </div>
+          <div class="profile-info-compact">
+            <div class="profile-name">{{ session.get('user_name', 'User') }}</div>
+            <div class="profile-status">
+              <span class="status-indicator"></span>
+              <span>Active Now</span>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="sidebar-quick-stats" id="sidebarStats">
+        <div class="quick-stats-title">Today's Overview</div>
+        <div class="quick-stats-grid">
+          <div class="quick-stat-item">
+            <div class="quick-stat-label">BMI</div>
+            <div class="quick-stat-value bmi" id="statBMI">
+              <span class="loading-placeholder"></span>
+            </div>
+          </div>
+          <div class="quick-stat-item">
+            <div class="quick-stat-label">Calories</div>
+            <div class="quick-stat-value" id="statCals">
+              <span class="loading-placeholder"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/dashboard" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}">🏠 Dashboard</a>
+        <a href="/meal" class="nav-item {% if request.path == '/meal' %}active{% endif %}">🍽️ Log Meal</a>
+        <a href="/progress" class="nav-item {% if request.path == '/progress' %}active{% endif %}">📈 Progress</a>
+        <a href="/ml-insights" class="nav-item {% if request.path == '/ml-insights' %}active{% endif %}">🤖 AI Insights</a>
+        <a href="/reports" class="nav-item {% if request.path == '/reports' %}active{% endif %}">📋 Reports</a>
+        <a href="/profile" class="nav-item {% if request.path == '/profile' %}active{% endif %}">👤 Profile</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="/logout" class="logout-btn">🚪 Sign Out</a>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <div class="top-bar">
+        <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+      </div>
+
+      <div class="content-container">
+        {% block content %}{% endblock %}
+      </div>
+
+      <footer class="footer">
+        <p>&copy; 2025 Nutrimo - Smart Nutrition & BMI Tracker. Built with ❤️ for healthy living.</p>
+      </footer>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- For pages without sidebar (e.g., login/signup) -->
+  <main>
+    {% block alt_content %}{% endblock %}
   </main>
-
-  {% if not hide_nav %}
-  <footer class="footer">
-    <div class="footer-content">
-      <div class="footer-section">
-        <h4>Smart Nutrition</h4>
-        <p style="color: var(--muted); font-size: 13px; line-height: 1.6;">
-          Track your BMI, log meals, and achieve your health goals with data-driven insights.
-        </p>
-      </div>
-      
-      <div class="footer-section">
-        <h4>Quick Links</h4>
-        <ul>
-          <li><a href="/dashboard">Dashboard</a></li>
-          <li><a href="/profile">Profile & Biometrics</a></li>
-          <li><a href="/meal">Log Meal</a></li>
-          <li><a href="/progress">View Progress</a></li>
-        </ul>
-      </div>
-      
-      <div class="footer-section">
-        <h4>Resources</h4>
-        <ul>
-          <li><a href="/reports">Reports & Insights</a></li>
-          <li><a href="/profile">My Profile</a></li>
-          <li><a href="#">Help Center</a></li>
-          <li><a href="#">Privacy Policy</a></li>
-        </ul>
-      </div>
-    </div>
-    
-    <div class="footer-bottom">
-      <p>&copy; 2025 Smart Nutrition & BMI Tracker. Built with ❤️ for healthy living.</p>
-    </div>
-  </footer>
   {% endif %}
 
   <script>
-    function toggleMobileMenu() {
-      const navLinks = document.getElementById('navLinks');
-      navLinks.classList.toggle('mobile-open');
-    }
-    
-    // Close mobile menu when clicking outside
-    document.addEventListener('click', function(event) {
-      const nav = document.querySelector('.nav');
-      const navLinks = document.getElementById('navLinks');
-      const toggle = document.querySelector('.mobile-menu-toggle');
-      
-      if (navLinks && !nav.contains(event.target) && navLinks.classList.contains('mobile-open')) {
-        navLinks.classList.remove('mobile-open');
-      }
-    });
+    // Sidebar toggle logic and sidebar stats here...
   </script>
 </body>
 </html>
