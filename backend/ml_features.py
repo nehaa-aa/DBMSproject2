@@ -9,6 +9,30 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from datetime import datetime, timedelta
+from decimal import Decimal
+
+# Helper function to convert Decimals to floats
+def convert_decimals(data):
+    """Convert Decimal objects to floats in a list of dictionaries"""
+    if isinstance(data, list):
+        return [{k: float(v) if isinstance(v, Decimal) else v for k, v in row.items()} for row in data]
+    return data
+
+def convert_to_native_types(obj):
+    """Convert numpy/pandas types to native Python types for JSON serialization"""
+    if isinstance(obj, (np.integer, np.int64, np.int32)):
+        return int(obj)
+    elif isinstance(obj, (np.floating, np.float64, np.float32)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {k: convert_to_native_types(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_native_types(item) for item in obj]
+    elif isinstance(obj, Decimal):
+        return float(obj)
+    return obj
 
 # ====================================================================
 # 1. ADVANCED BMI PREDICTION
@@ -19,68 +43,91 @@ def predict_bmi_advanced(user_id, db_query_func):
     Polynomial regression for better BMI predictions
     Returns predictions for 30, 60, 90 days with confidence score
     """
-    history = db_query_func(
-        """SELECT weight_kg, bmi, height_cm, updated_at 
-           FROM Biometrics 
-           WHERE user_id=%s 
-           ORDER BY updated_at ASC""",
-        (user_id,)
-    )
-    
-    if len(history) < 2:
-        return {'error': 'Need at least 2 biometric entries over different days'}
-    
-    # Convert to DataFrame
-    df = pd.DataFrame(history)
-    df['days'] = (df['updated_at'] - df['updated_at'].iloc[0]).dt.days
+    try:
+        history = db_query_func(
+            """SELECT weight_kg, bmi, height_cm, updated_at 
+               FROM Biometrics 
+               WHERE user_id=%s 
+               ORDER BY updated_at ASC""",
+            (user_id,)
+        )
+        
+        if not history or len(history) < 2:
+            return {'error': 'Need at least 2 biometric entries over different days'}
+        
+        # Convert Decimals to floats
+        history = convert_decimals(history)
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(history)
+        
+        # Ensure updated_at is datetime
+        if not pd.api.types.is_datetime64_any_dtype(df['updated_at']):
+            df['updated_at'] = pd.to_datetime(df['updated_at'])
+        
+        df['days'] = (df['updated_at'] - df['updated_at'].iloc[0]).dt.days
+    except Exception as e:
+        print(f"Error in BMI prediction: {e}")
+        return {'error': f'Error processing biometric data: {str(e)}'}
+        df['days'] = (df['updated_at'] - df['updated_at'].iloc[0]).dt.days
+    except Exception as e:
+        print(f"Error in BMI prediction: {e}")
+        return {'error': f'Error processing biometric data: {str(e)}'}
     
     # Check if all entries are on the same day
     if df['days'].max() == 0:
         return {'error': 'Need entries from different days for prediction'}
     
-    X = df[['days']].values
-    y = df['weight_kg'].values
-    
-    # Polynomial regression (degree 2 for smooth curves)
-    poly = PolynomialFeatures(degree=2)
-    X_poly = poly.fit_transform(X)
-    
-    model = LinearRegression()
-    model.fit(X_poly, y)
-    
-    # Make predictions
-    current_days = X[-1][0]
-    future_days = [current_days + 30, current_days + 60, current_days + 90]
-    
-    predictions = []
-    current_height = float(df['height_cm'].iloc[-1])
-    
-    for days in future_days:
-        X_pred = poly.transform([[days]])
-        pred_weight = float(model.predict(X_pred)[0])
-        pred_bmi = round(pred_weight / ((current_height/100) ** 2), 1)
+    try:
+        X = df[['days']].values
+        y = df['weight_kg'].values
         
-        predictions.append({
-            'days': days - current_days,
-            'weight': round(pred_weight, 1),
-            'bmi': pred_bmi
-        })
-    
-    # Calculate trend
-    weight_change = (y[-1] - y[0]) / len(y)
-    trend = 'gaining' if weight_change > 0.1 else 'losing' if weight_change < -0.1 else 'stable'
-    
-    # Confidence based on data points and consistency
-    confidence = min(len(history) * 15, 95)
-    
-    return {
-        'success': True,
-        'current_weight': round(float(y[-1]), 1),
-        'trend': trend,
-        'confidence': confidence,
-        'predictions': predictions,
-        'data_points': len(history)
-    }
+        # Polynomial regression (degree 2 for smooth curves)
+        poly = PolynomialFeatures(degree=2)
+        X_poly = poly.fit_transform(X)
+        
+        model = LinearRegression()
+        model.fit(X_poly, y)
+        
+        # Make predictions
+        current_days = X[-1][0]
+        future_days = [current_days + 30, current_days + 60, current_days + 90]
+        
+        predictions = []
+        current_height = float(df['height_cm'].iloc[-1])
+        
+        for days in future_days:
+            X_pred = poly.transform([[days]])
+            pred_weight = float(model.predict(X_pred)[0])
+            pred_bmi = round(pred_weight / ((current_height/100) ** 2), 1)
+            
+            predictions.append({
+                'days': int(days - current_days),
+                'weight': round(pred_weight, 1),
+                'bmi': pred_bmi
+            })
+        
+        # Calculate trend
+        weight_change = (y[-1] - y[0]) / len(y)
+        trend = 'gaining' if weight_change > 0.1 else 'losing' if weight_change < -0.1 else 'stable'
+        
+        # Confidence based on data points and consistency
+        confidence = min(len(history) * 15, 95)
+        
+        result = {
+            'success': True,
+            'current_weight': round(float(y[-1]), 1),
+            'trend': trend,
+            'confidence': int(confidence),
+            'predictions': predictions,
+            'data_points': len(history)
+        }
+        
+        # Convert all numpy types to native Python types
+        return convert_to_native_types(result)
+    except Exception as e:
+        print(f"Error in BMI prediction calculation: {e}")
+        return {'error': f'Error calculating predictions: {str(e)}'}
 
 
 # ====================================================================
@@ -109,6 +156,9 @@ def analyze_eating_patterns(user_id, db_query_func):
     if not meals or len(meals) < 5:
         return {'error': 'Need at least 5 meal logs for pattern analysis'}
     
+    # Convert Decimals to floats
+    meals = convert_decimals(meals)
+    
     df = pd.DataFrame(meals)
     
     # Pattern 1: Peak eating hours
@@ -134,8 +184,8 @@ def analyze_eating_patterns(user_id, db_query_func):
     
     # Pattern 3: Calorie consistency
     daily_cals = df.groupby(df['eaten_at'].dt.date)['calories'].sum()
-    avg_daily = daily_cals.mean()
-    std_daily = daily_cals.std()
+    avg_daily = float(daily_cals.mean())
+    std_daily = float(daily_cals.std())
     
     # Consistency score (lower std = higher consistency)
     consistency_score = round(max(0, 100 - (std_daily / avg_daily * 100)), 0)
@@ -147,13 +197,13 @@ def analyze_eating_patterns(user_id, db_query_func):
     weekend_days = df[df['is_weekend']]['eaten_at'].dt.date.nunique()
     weekday_days = df[~df['is_weekend']]['eaten_at'].dt.date.nunique()
     
-    weekend_avg = df[df['is_weekend']]['calories'].sum() / max(weekend_days, 1)
-    weekday_avg = df[~df['is_weekend']]['calories'].sum() / max(weekday_days, 1)
+    weekend_avg = float(df[df['is_weekend']]['calories'].sum() / max(weekend_days, 1))
+    weekday_avg = float(df[~df['is_weekend']]['calories'].sum() / max(weekday_days, 1))
     
     # Pattern 5: Meal frequency
     meals_per_day = len(df) / df['eaten_at'].dt.date.nunique()
     
-    return {
+    result = {
         'success': True,
         'peak_eating_hours': peak_hours_formatted,
         'favorite_foods': favorite_foods,
@@ -166,6 +216,8 @@ def analyze_eating_patterns(user_id, db_query_func):
         'meals_per_day': round(meals_per_day, 1),
         'total_meals_analyzed': len(df)
     }
+    
+    return convert_to_native_types(result)
 
 
 # ====================================================================
@@ -301,9 +353,12 @@ def detect_calorie_anomalies(user_id, db_query_func):
     if len(daily_cals) < 7:
         return {'error': 'Need at least 7 days of meal logs'}
     
+    # Convert Decimals to floats
+    daily_cals = convert_decimals(daily_cals)
+    
     df = pd.DataFrame(daily_cals)
-    mean_cals = df['total'].mean()
-    std_cals = df['total'].std()
+    mean_cals = float(df['total'].mean())
+    std_cals = float(df['total'].std())
     
     # Anomaly detection: beyond 2 standard deviations
     df['z_score'] = (df['total'] - mean_cals) / std_cals
@@ -325,10 +380,10 @@ def detect_calorie_anomalies(user_id, db_query_func):
         })
     
     # Recent trend (last 7 days vs overall average)
-    recent_avg = df.head(7)['total'].mean()
+    recent_avg = float(df.head(7)['total'].mean())
     trend = 'increasing' if recent_avg > mean_cals * 1.05 else 'decreasing' if recent_avg < mean_cals * 0.95 else 'stable'
     
-    return {
+    result = {
         'success': True,
         'average_daily': round(mean_cals, 0),
         'consistency_score': round(max(0, 100 - (std_cals / mean_cals * 100)), 0),
@@ -336,6 +391,8 @@ def detect_calorie_anomalies(user_id, db_query_func):
         'recent_trend': trend,
         'days_analyzed': len(df)
     }
+    
+    return convert_to_native_types(result)
 
 
 # ====================================================================
@@ -363,6 +420,9 @@ def calculate_nutrition_score(user_id, db_query_func):
     if not meals or len(meals) < 5:
         return {'error': 'Need at least 5 meals for nutrition score'}
     
+    # Convert Decimals to floats
+    meals = convert_decimals(meals)
+    
     df = pd.DataFrame(meals)
     
     score = 0
@@ -370,14 +430,17 @@ def calculate_nutrition_score(user_id, db_query_func):
     
     # 1. Calorie Consistency (30 points)
     daily_cals = df.groupby(df['eaten_at'].dt.date)['calories'].sum()
-    consistency = max(0, 30 - (daily_cals.std() / daily_cals.mean() * 15))
+    mean_daily = float(daily_cals.mean())
+    std_daily = float(daily_cals.std())
+    
+    consistency = max(0, 30 - (std_daily / mean_daily * 15))
     score += consistency
     breakdown['consistency'] = round(consistency, 1)
     
     # 2. Macro Balance (30 points)
-    total_protein = df['protein'].sum()
-    total_carbs = df['carbs'].sum()
-    total_fat = df['fat'].sum()
+    total_protein = float(df['protein'].sum())
+    total_carbs = float(df['carbs'].sum())
+    total_fat = float(df['fat'].sum())
     total = total_protein + total_carbs + total_fat
     
     if total > 0:
@@ -406,7 +469,7 @@ def calculate_nutrition_score(user_id, db_query_func):
     # 4. Regular Eating Pattern (20 points)
     # Check if eating at consistent times
     df['hour'] = df['eaten_at'].dt.hour
-    hour_std = df['hour'].std()
+    hour_std = float(df['hour'].std())
     pattern_score = max(0, 20 - hour_std)
     score += pattern_score
     breakdown['eating_pattern'] = round(pattern_score, 1)
@@ -423,10 +486,12 @@ def calculate_nutrition_score(user_id, db_query_func):
     else:
         rating = 'Needs Improvement'
     
-    return {
+    result = {
         'success': True,
         'total_score': int(total_score),
         'rating': rating,
         'breakdown': breakdown,
         'days_analyzed': days
     }
+    
+    return convert_to_native_types(result)
