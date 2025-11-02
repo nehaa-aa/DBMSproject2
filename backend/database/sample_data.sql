@@ -14,4 +14,3 @@ ON DUPLICATE KEY UPDATE
     fiber_g = VALUES(fiber_g),
     sugar_g = VALUES(sugar_g),
     sodium_mg = VALUES(sodium_mg);
-
